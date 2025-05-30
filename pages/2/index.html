@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+	<title>DidiSoftwares</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<meta name="google" value="notranslate">
+	<link type="text/css" rel="stylesheet" href="./index.css">
+	<!--<link type="text/css" rel="stylesheet" href="/build/font/awessome.css">-->
+	<link type="text/css" rel="stylesheet" href="./font/all.css">
+</head>
+
+<body>
+
+	<div id="main" class="cmain"></div>
+
+	<a id="downloadAnchorElem" style="display:none"></a>
+	<video src="#" id="tv_nosignal" autoplay muted loop playsinline style="display:none"></video>
+	<video src="#" id="tv_clips" autoplay muted style="display:none"></video>
+	<video src="#" id="tv_shows" autoplay muted loop style="display:none"></video>
+	<video src="#" id="tv_series" autoplay muted loop style="display:none"></video>
+	<canvas id="tv_canvasmonitor" width="256" height="256" style="display:none"></canvas>
+	<div id="javatari">
+		<div id="javatari-screen"></div>
+	</div>
+	
+	<button id="infomenu" class="fa-solid fa-bars" onclick="$('#infomenuitem').toggle();"></button>
+	<ul id="infomenuitem">
+		<li><a href="../index.html"> HOME</a></li>
+    </ul>
+
+	<div id="info">iandidi123@gmail.com</div>
+	<div id="info2"></div>
+	<div id="spritearea"></div>
+	<div id="btCenter">
+		<div id="loadingText" class="loadingText"></div>
+		<div id="container" class="container">
+			<div class="holder">
+				<div class="box animation_paused"></div>
+			</div>
+			<div class="holder">
+				<div class="box animation_paused"></div>
+			</div>
+			<div class="holder">
+				<div class="box animation_paused"></div>
+			</div>
+		</div>
+		<div id="loadingItens" class="loadingItens">Click Anywhere</div>		
+		<!-- <button id="initBt" name="initBt" style="display: none;">Click to Load</button>-->
+	</div>
+
+
+	<script type="importmap">
+			{
+				"imports": {
+					"three": "./_module.js",
+					"three/addons/": "./"					
+				}
+			}			
+	</script>
+	<!--"ammo": "./build/ammow.js"-->
+
+	<script>
+		document.addEventListener('contextmenu', event => {
+			event.preventDefault();
+		});
+		window.CURR_SCENE = 1;
+		window._UN = 'undefined';
+		
+	</script>
+
+	<script type="text/javascript" src="./_jquery.js"></script>
+	<!--<script type="text/javascript" src="./build/ammow.js"></script>-->
+	<script type="text/javascript" src="./i_events.js"></script>
+	<script type="module" src="./_index.js"></script>
+
+
+</body>
+
+</html>

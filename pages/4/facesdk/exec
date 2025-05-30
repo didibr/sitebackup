@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Verifica se o ID foi fornecido
+if [ -z "$1" ]; then
+    echo "❌ Uso: $0 <ID>"
+    exit 1
+fi
+
+ID="$2"
+CMD="$1"
+
+# Nome do arquivo fonte e do executável
+SOURCE="face.cpp"
+OUTPUT="face"
+
+# Define o caminho para a lib
+export LD_LIBRARY_PATH=/www/pages/4/facesdk:$LD_LIBRARY_PATH
+
+# Compilar
+
+# Verificar se compilou com sucesso
+
+./"$OUTPUT" "$CMD" "$ID"
+

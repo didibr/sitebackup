@@ -1,0 +1,31 @@
+https://github.com/mikolalysenko/surface-nets
+https://github.com/EthanHermsey/volumetric-terrain
+https://discourse.threejs.org/t/apply-shadow-in-shadermaterial/53833/4
+
+
+/*USE PHONE acelerometer
+let angleY = 0; // rotação acumulada da câmera em Y
+let speed = 0.3; // velocidade de movimento
+function startMove(){
+setInterval(() => {  
+  const dx = Math.sin(angleY) * speed;
+  const dz = Math.cos(angleY) * speed;  
+  T.camera.position.x -= dx;
+  T.camera.position.z -= dz; // trocado para "+", pois Z em Three.js cresce pra trás  
+  T.camera.rotation.y = angleY;
+}, 20);
+}
+
+// Controle por acelerômetro (acumula rotação)
+window.addEventListener("devicemotion", (event) => {
+  const acc = event.accelerationIncludingGravity;
+  if (!acc) return;
+  // Detecta inclinação lateral
+  let tilt = (window.innerWidth > window.innerHeight) ? acc.y : acc.x;
+  // Inverte o sinal, se necessário (ajuste para o seu celular)
+  tilt = -tilt;
+  // Limita o valor e acumula como rotação
+  tilt = Math.max(-5, Math.min(5, tilt)); // evita picos
+  angleY += tilt * 0.002; // ajuste de sensibilidade aqui
+});
+*/

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="../bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <title>Liveness Chec</title>
+  <style>
+    textarea {
+      font-family: monospace;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+
+<body class="bg-dark text-white vh-100 m-0 d-flex flex-column">
+
+  <div class="container-fluid mt-3">
+    <div class="row">
+      <!-- Form da esquerda -->
+      <div class="col-md-4 col-12 mb-3">
+        <div id="form-container" class="border bg-white text-danger p-3 rounded shadow small text-start">
+          <h5 class="my-0">API ACTIONS (email as KEY)</h5>
+          <!-- ... conteúdo do formulário ... -->
+          <div class="my-1">
+            <input type="email" class="form-control" id="email" placeholder="unique@email.com">
+          </div>
+          <div class="my-1">
+            <label for="post" class="form-label mb-1">URL SUCESS</label>
+            <input type="text" class="form-control py-1 my-0" id="post" placeholder="http://site.com/page">
+          </div>
+          <div class="my-1">
+            <label for="scriptSuccess" class="form-label mb-1">Script Sucess (JS)</label>
+            <textarea class="form-control py-1 my-0" id="scriptSuccess" rows="3" maxlength="200"
+              placeholder="Ex: alert('Sucess');">alert('script sucess #TOKEN#');</textarea>
+          </div>
+          <div class="my-1">
+            <label for="scriptFail" class="form-label mb-1">Script Fail (JS)</label>
+            <textarea class="form-control py-1 my-0" id="scriptFail" rows="3" maxlength="200"
+              placeholder="Ex: alert('Fail');">alert('script fail');</textarea>
+          </div>
+          <!-- Novos campos numéricos lado a lado -->
+          <div class="row my-1">
+            <div class="col-4">
+              <label for="challenge" class="form-label mb-1">Challenge</label>
+              <input type="number" class="form-control py-1 my-0" id="challenge" min="1" max="4" value="4">
+            </div>
+            <div class="col-4">
+              <label for="retry" class="form-label mb-1">Retry</label>
+              <input type="number" class="form-control py-1 my-0" id="retry" min="0" max="5" value="3">
+            </div>
+            <div class="col-4">
+              <label for="attempt" class="form-label mb-1">Attempt</label>
+              <input type="number" class="form-control py-1 my-0" id="attempt" min="1" max="10" value="4">
+            </div>
+          </div>
+
+          <div class="my-1">
+            <label for="pass" class="form-label mb-1">Password</label>
+            <input type="password" class="form-control py-1 my-0" id="pass" placeholder="Password">
+          </div>
+          <button type="button" id="submit" class="btn btn-danger w-100 mt-1 ">Save Scripts to This Email/Key</button>
+        </div>
+      </div>
+
+      <!-- Form centralizado -->
+      <div class="col-md-7 offset-md-0 col-12">
+        <div id="form-center" class="border bg-white text-black p-3 rounded shadow">
+          <h5 class="my-0 text-danger">LIVENESS CHECK</h5>
+          <button type="button" id="btRun" class="btn btn-danger  mt-1"><- RUN for this EMAIL</button>
+              <br><br>
+              <div data-i18n="proj4_desc">
+                loading...
+              </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <script src="../translation.js"></script>
+
+  <!----------------------------------->
+  <!-- capture script USED IN CLIENT -->
+  <!----------------------------------->
+  <script src="liveness.js" type="text/javascript"></script>
+  <script>
+    function initiateCapture(email) {
+      //generate random token
+      const token = Math.random().toString(36).substring(2, 7);      
+      let lang="en";
+      if(typeof(_TRANSLATION_LANG)!=undefined)lang=_TRANSLATION_LANG; //get current site language
+      //start API with site language
+      dlive.create(lang, email, token).start();
+    }
+    function stopCapture(){
+      dlive.stop();
+    }
+  </script>
+  <!----------------------------------->
+
+
+  <!-- form part -->
+  <script>
+    //btn on click
+    let btRun = document.getElementById("btRun");
+    let isRunning = false;
+    btRun.onclick = () => {
+      let email = document.getElementById('email').value.trim();
+      if (!validarEmail(email)) {
+        email = 'iandidi123@gmail.com';
+      }
+      btRun.disabled = true;
+      setTimeout(() => {btRun.disabled = false;}, 2000);
+      if (!isRunning) {
+        initiateCapture(email);
+        btRun.textContent = "STOP";
+        isRunning = true;
+      } else {
+        stopCapture(); // Você precisa implementar isso se quiser parar algo
+        btRun.textContent = "RUN for this EMAIL";
+        isRunning = false;
+      }
+    };
+
+    // mail validator
+    function validarEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+
+    document.getElementById('submit').addEventListener('click', (e) => {
+      e.preventDefault();
+
+      const data = {
+        post: document.getElementById('post').value,
+        challenge: document.getElementById('challenge').value,
+        retry: document.getElementById('retry').value,
+        attempt: document.getElementById('attempt').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('pass').value,
+        scriptSuccess: document.getElementById('scriptSuccess').value,
+        scriptFail: document.getElementById('scriptFail').value
+      };
+
+      fetch('/page4savecfg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+        .then(res => res.text())
+        .then(msg => {
+          if (msg == "SUCESS") msg = "API Sucess Saved to\n" + data.email;
+          alert(msg);
+        })
+        .catch(err => alert("Erro ao enviar dados"));
+    });
+  </script>
+
+
+</body>
+
+</html>

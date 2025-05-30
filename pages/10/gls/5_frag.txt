@@ -1,0 +1,46 @@
+precision highp float;
+uniform float iTime;
+uniform vec2 iResolution;
+void main() {
+    vec2 F = gl_FragCoord.xy;
+    vec2 r = iResolution.xy;
+
+    float i = 0.2;
+    float a;
+
+    // Coordenadas centradas e normalizadas
+    vec2 p = (F + F - r) / r.y / 0.7;
+    vec2 d = vec2(-1.0, 1.0); // Vetor diagonal
+    vec2 b = p - i * d;
+
+    // Perspectiva e rotação
+    vec2 c = p * mat2(1.0, 1.0, d / (0.1 + i / dot(b, b)));
+    a = dot(c, c);
+
+    // Coordenadas em espiral
+    vec2 v = c * mat2(cos(0.5 * log(a) + iTime * i + vec4(0,33,11,0))) / i;
+
+    // Acumulador para colorização
+    vec2 w = vec2(0.0);
+
+    // Loop das ondas (corrigido!)
+    for (int j = 0; j < 9; j++) {
+        float fi = float(j) + 0.2;
+        w += vec2(1.0) + sin(v);
+        v += 0.7 * sin(v.yx * fi + iTime) / fi + 0.5;
+    }
+
+    // Raio do disco de acreção
+    i = length(sin(v / 0.3) * 0.4 + c * (3.0 + d));
+
+    // Gradiente vermelho/azul
+    vec4 O = 1.0 - exp(
+        -exp(c.x * vec4(0.6, -0.4, -1.0, 0.0))  // Gradiente
+        / w.xyyx                                // Colorização por ondas
+        / (2.0 + i * i / 4.0 - i)               // Brilho do disco
+        / (0.5 + 1.0 / a)                       // Escuridão do centro
+        / (0.03 + abs(length(p) - 0.7))         // Destaque da borda
+    );
+
+    gl_FragColor = O;
+}

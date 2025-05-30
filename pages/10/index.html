@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shader</title>
+  <script src="codemirror.js"></script>
+  <link rel="stylesheet" href="codemirror.css">
+
+</head>
+
+<body>
+  <div id="myContainer"></div>
+
+  <div class="tabs">
+    <div class="content-area">
+      <div class="tab-buttons">
+        <button class="active" data-tab="fragment">Fragment</button>
+        <button data-tab="vertex">Vertex</button>
+        <button data-tab="constants">Constants</button>
+        <button data-tab="samples">Samples</button>
+      </div>
+
+      <div id="fragment" class="tab-content active">
+        <textarea id="fragmentt">Fragment Shader</textarea>
+      </div>
+
+      <div id="vertex" class="tab-content">
+        <textarea id="vertext">Vertex Shader</textarea>
+      </div>
+
+      <div id="constants" class="tab-content">
+        <ul>
+          <li>float time</li>
+          <li>vec2 resolution</li>
+          <li>vec3 color</li>
+          <!-- Adicione mais constantes aqui -->
+        </ul>
+      </div>
+
+      <div id="samples" class="tab-content" style="overflow: auto">
+
+        <!-- Formulário antes da lista -->
+        <div class="form-area">
+          <input type="text" id="name" placeholder="Name" class="form-input">
+          <input type="email" id="email" placeholder="Mail" class="form-input">
+          <button onclick="sendForm()" class="form-button">UPLOAD</button>
+        </div>
+
+        <!-- Lista dos botões existentes -->
+        <ul>          
+        </ul>
+      </div>
+
+
+      
+    </div>
+
+    <button class="bottom-button" onclick="applyShader();">EXECUTE</button>
+    <div id="errordiv" class="bottom-bar-fixed">
+      errors
+    </div>
+
+    <script type="module" src="vanila.js"></script>
+</body>
+
+</html>

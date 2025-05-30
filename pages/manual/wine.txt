@@ -1,0 +1,38 @@
+############### CONDA - Gerenciador Python
+-Ativar o Conda
+source ~/.bashrc
+-Criar um ambiente
+conda create -n py311 python=3.11
+-To activate this environment, use
+conda activate py311
+-To deactivate an active environment, use
+conda deactivate
+-listar todos ambientes
+conda env list
+-remover ambiente
+conda remove -n py39 --all
+-Para instalar pacotes dentro do ambiente:
+conda install numpy pandas
+-Para remover um pacote:
+conda remove numpy
+
+###################### wine (speech)
+apt install wine winetricks xvfb fluxbox x11vnc
+############## script para acesso remoto tightVNC configurar ivona e outras coisas
+#!/bin/bash
+export DISPLAY=:1
+export WINEARCH=win32
+export WINEPREFIX=/www/wine
+LOG_FILE="/tmp/x11vnc.log"
+echo "✅ Iniciando ambiente Wine com Xvfb + Fluxbox + x11vnc..."
+winetricks -q speechsdk
+pgrep Xvfb     > /dev/null || { echo "🖥️ Iniciando Xvfb...";     Xvfb :1 -screen 0 800x600x16 & sleep 2; } || echo "🖥️ Xvfb já está rodando."
+pgrep fluxbox  > /dev/null || { echo "🪟 Iniciando Fluxbox...";  fluxbox & sleep 1; } || echo "🪟 Fluxbox já está rodando."
+pgrep x11vnc   > /dev/null || { echo "📡 Iniciando x11vnc...";   x11vnc -display :1 -passwd di131379 -forever -bg -noxdamage -rfbport 5900 -o "$LOG_FILE" -verbose; } || echo "📡 x11vnc já está rodando."
+sleep 2
+echo "🌐 Acesse com VNC Viewer no IP do servidor, porta 5900"
+echo "🔐 Senha VNC: di123123"
+echo "📄 Log do x11vnc: $LOG_FILE"
+############### instale as vozes ivona com auxilio do x11Vnc
+### DISPLAY=:1 WINEPREFIX=/www/wine wine c:\voices\en\Ivona_Voice_1.6_Jennifer_22kHz.exe
+

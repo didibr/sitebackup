@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DidiSoftwares - Portfolio</title>
+  <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+</head>
+
+<body>
+
+  <header class="text-center text-white py-4 position-relative"
+    style="background: url('./bootstrap/bg.jpg') no-repeat center center; background-size: cover;">
+    <div style="position: absolute;inset: 0; background: rgba(220, 53, 69, 0.7); z-index: 0;"></div>
+    <div class="container position-relative" style="z-index: 1;">
+      <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 10px;">
+        <button onclick="setLanguage('pt')" style="border: none; background: transparent;">
+          <img src="./bootstrap/pt.png" alt="Português" style="width: 32px; height: 32px;">
+        </button>
+        <button onclick="setLanguage('en')" style="border: none; background: transparent;">
+          <img src="./bootstrap/en.png" alt="English" style="width: 32px; height: 32px;">
+        </button>
+      </div>
+      <h1 class="display-4 fw-bold">DidiSoftwares</h1>
+      <div class="input-group mt-3 mx-auto" style="max-width: 400px;">
+        <span class="input-group-text bg-white text-dark">🔍</span>
+        <input type="text" id="searchInput" class="form-control" placeholder="Buscar projetos..."
+          data-i18n-placeholder="search">
+      </div>
+    </div>
+  </header>
+
+
+
+
+
+
+
+  <main class="container my-5">
+    <div class="row g-4">
+
+
+      <!-- PROJETO 5 -->
+      <div class="col-md-6">
+        <div class="card text-bg-dark shadow project-card">
+          <div class="ratio ratio-16x9">
+            <iframe src="./5/index2.html#iframe"></iframe>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title text-danger">TEXT TO SPEECH (TTS) API</h5>
+            <a href="./5/index.html" class="btn btn-danger btn-sm" data-i18n="view_more">Ver mais</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJETO 9 -->
+      <div class="col-md-6">
+        <div class="card text-bg-dark shadow project-card">
+          <img src="./bootstrap/proj9.jpg" class="card-img-top" alt="Endlles Terrain">
+          <div class="card-body">
+            <h5 class="card-title text-danger" data-i18n="proj9_title">Terreno Infinito</h5>
+            <p class="card-text" data-i18n="proj9_desc">Um gerador de terreno sem fim.Use W e D para virar.</p>
+            <a href="./9/index.html" class="btn btn-danger btn-sm" data-i18n="view_more">Ver mais</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJETO 6 -->
+      <div class="col-md-6">
+        <div class="card text-bg-dark shadow project-card">
+          <div class="ratio ratio-16x9">
+            <iframe src="./6/index.html#iframe"></iframe>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title text-danger">PHYSICS HTML</h5>
+            <a href="./6/index.html" class="btn btn-danger btn-sm" data-i18n="view_more">Ver mais</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJETO 4 -->
+      <div class="col-md-6">
+        <div class="card text-bg-dark shadow project-card">
+          <img src="./bootstrap/proj4.jpg" class="card-img-top" alt="Liveness API">
+          <div class="card-body">
+            <h5 class="card-title text-danger">Liveness Check API</h5>
+            <p class="card-text" data-i18n="proj4_card_desc">Liveness Check (ou verificação de vivacidade) é uma técnica
+              usada para garantir que uma pessoa está fisicamente presente durante uma autenticação facial, e não apenas
+              exibindo uma foto, vídeo ou máscara.</p>
+            <a href="./4/index.html" class="btn btn-danger btn-sm" data-i18n="view_more">Ver mais</a>
+            <button id="btRun" class="btn btn-info btn-sm" onclick="initiateCapture();">EXECUTE</button>
+          </div>
+        </div>
+        <script>
+          let isRunning = false;
+          function initiateCapture() {
+            let btRun = document.getElementById("btRun");
+            btRun.disabled = true;
+            setTimeout(() => { btRun.disabled = false; }, 2000);
+            if (!isRunning) {
+              const token = Math.random().toString(36).substring(2, 7);
+              let lang = "en";
+              if (typeof (_TRANSLATION_LANG) != undefined) lang = _TRANSLATION_LANG; //get current site language      
+              dlive.create(lang, 'iandidi123@gmail.com', token).start();
+              btRun.textContent = "STOP";
+              isRunning = true;
+            } else {
+              dlive.stop();
+              btRun.textContent = "EXECUTE";
+              isRunning = false;
+            }
+          }
+
+        </script>
+      </div>
+
+      <!-- PROJETO 8 -->
+      <div class="col-md-6">
+        <div class="card text-bg-dark shadow project-card">
+          <img src="./bootstrap/proj8.jpg" class="card-img-top" alt="Domino">
+          <div class="card-body">
+            <h5 class="card-title text-danger">Domino</h5>
+            <p class="card-text" data-i18n="proj8_desc">Exemplo de fisica e contato com peças de domino coloridas</p>
+            <a href="./8/index.html" class="btn btn-danger btn-sm" data-i18n="view_more">Ver mais</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJETO 1 -->
+      <div class="col-md-6">
+        <div class="card text-bg-dark shadow project-card">
+          <div class="ratio ratio-16x9">
+            <iframe src="./1/index.html#iframe"></iframe>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title text-danger" data-i18n="proj1_title">Gerador de Imagem SD 1.5</h5>
+            <p class="card-text" data-i18n="proj1_desc_small">Gerador de imagem feito em Python 3.11, rodando Stable
+              Diffusion
+              1.5 sem GPU, apenas com processador</p>
+            <a href="./1/index.html" class="btn btn-danger btn-sm" data-i18n="view_more">Ver mais</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJETO 2 -->
+      <div class="col-md-6">
+        <div class="card text-bg-dark shadow project-card">
+          <img src="./bootstrap/proj2.jpg" class="card-img-top" alt="3D Room Game">
+          <div class="card-body">
+            <h5 class="card-title text-danger" data-i18n="proj2_title">Prototipo Jogo 3D WEB</h5>
+            <p class="card-text" data-i18n="proj2_desc">Prototipo de um jogo 3D feito para rodar na pagina, com
+              interatividade entre varios itens...</p>
+            <a href="./2/index.html" class="btn btn-danger btn-sm" data-i18n="view_more">Ver mais</a>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- PROJETO 3 -->
+      <div class="col-md-6">
+        <div class="card text-bg-dark shadow project-card">
+          <img src="./bootstrap/proj3.jpg" class="card-img-top" alt="Controle a Escavadeira">
+          <div class="card-body">
+            <h5 class="card-title text-danger" data-i18n="proj3_title">Controle a Escavadeira</h5>
+            <p class="card-text" data-i18n="proj3_desc">Controle uma Escavadeira com o teclado, simula todos o controle
+              de uma escavadeira no navegaor, com fisica e 3D, feito em javascript</p>
+            <a href="./3/index.html" class="btn btn-danger btn-sm" data-i18n="view_more">Ver mais</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJETO 7 -->
+      <div class="col-md-6">
+        <div class="card text-bg-dark shadow project-card">
+          <img src="./bootstrap/proj7.jpg" class="card-img-top" alt="3D Room Game">
+          <div class="card-body">
+            <h5 class="card-title text-danger">Black Cat Canvas</h5>
+            <p class="card-text" data-i18n="proj7_desc">Base de jogo 2D que utiliza apenas canvas e fisica, sem
+              bibliotecas complexas</p>
+            <a href="./7/index.html" class="btn btn-danger btn-sm" data-i18n="view_more">Ver mais</a>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- IMAGE 
+        <div class="col-md-6">
+          <div class="card text-bg-dark shadow project-card">
+            <img src="./bootstrap/img1.jpg" class="card-img-top" alt="Imagem do Projeto 1">
+            <div class="card-body">
+              <h5 class="card-title">Projeto 1</h5>
+              <p class="card-text">Descrição rápida do projeto, funcionalidades e tecnologias usadas.</p>
+              <a href="#" class="btn btn-danger btn-sm">Ver mais</a>
+            </div>
+          </div>
+        </div>
+        -->
+
+      <!-- IFRAME 
+          <div class="col-md-6">
+              <div class="card text-bg-dark shadow project-card">
+                <div class="ratio ratio-16x9">
+                  <iframe src="./1/index.html"></iframe>
+                </div>
+                <div class="card-body">
+                  <h5 class="card-title">Projeto 3</h5>
+                  <p class="card-text">Este projeto é exibido dentro de um iframe.</p>
+                  <a href="./1/index.html" class="btn btn-danger btn-sm" target="_blank">Ver mais</a>
+                </div>
+              </div>
+            </div>
+          -->
+  </main>
+
+
+
+  <footer class="text-center py-4 text-secondary bg-dark mt-5">
+    &copy; 2025 DidiSoftwares. iandidi123@gmail.com
+  </footer>
+
+  <script src="./bootstrap/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+  <script src="./main.js"></script>
+  <script src="./4/liveness.js" type="text/javascript"></script> <!-- PROJ4 -->
+  <script src="./translation.js"></script>
+</body>
+
+</html>

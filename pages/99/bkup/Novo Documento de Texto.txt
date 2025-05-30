@@ -1,0 +1,2 @@
+https://github.com/jrouwe/JoltPhysics.js?tab=readme-ov-file
+https://jrouwe.github.io/JoltPhysics.js/

@@ -1,0 +1,9 @@
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+
+
+para usar o emscript ative o bash:
+source ./emsdk_env.sh

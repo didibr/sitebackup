@@ -1,0 +1,22 @@
+[
+  {
+    "post": "https://didisoftwares.ddns.net/post",
+    "email": "aa@aa.com",
+    "password": "112233",
+    "scriptSuccess": "alert('script sucess #TOKEN#');",
+    "scriptFail": "alert('script fail');",
+    "challenge": 1,
+    "retry": 3,
+    "attempt": 4
+  },
+  {
+    "post": "",
+    "email": "iandidi123@gmail.com",
+    "password": "didisoftwares123",
+    "scriptSuccess": "alert('script sucess \\nreceived TOKEN=#TOKEN#');",
+    "scriptFail": "alert('script fail');",
+    "challenge": 2,
+    "retry": 3,
+    "attempt": 4
+  }
+]

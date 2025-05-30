@@ -1,0 +1,20 @@
+#!/bin/bash
+
+
+# Nome do arquivo fonte e do executável
+SOURCE="face.cpp"
+OUTPUT="face"
+
+# Define o caminho para a lib
+export LD_LIBRARY_PATH=/www/pages/4/facesdk:$LD_LIBRARY_PATH
+
+# Compilar
+echo "Compilando $SOURCE..."
+g++ "$SOURCE" -o "$OUTPUT" -I/www/pages/4/facesdk -L/www/pages/4/facesdk -l:libfsdk.so
+
+# Verificar se compilou com sucesso
+if [ $? -eq 0 ]; then
+    echo "Compilação bem-sucedida."
+else
+    echo "❌ Erro na compilação."
+fi
