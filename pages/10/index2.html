@@ -1,0 +1,211 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shader</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=swap" rel="stylesheet" />
+  <style>
+    body,
+    html {
+      background-color: #474747;
+      color: white;
+    }
+
+    .fontStyle {
+      font-family: 'Roboto', sans-serif;
+      font-weight: 900;
+      font-size: 8vw;
+      /* Responsivo */
+      text-align: center;
+      display: block;
+      margin: 0 auto;
+      word-break: break-word;
+      white-space: normal;
+      line-height: 1.1;
+    }
+
+    #myContainer {
+      text-align: center;
+      padding: 8px;
+      background-color: black;
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+
+    .shader-button {
+      background-color: black;
+      color: white;
+      border: 2px solid white;
+      padding: 10px 20px;
+      font-size: 18px;
+      font-family: 'Roboto', sans-serif;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .shader-button:hover {
+      background-color: white;
+      color: black;
+    }
+
+    
+  </style>
+
+</head>
+
+<body>
+  <div id="myContainer">
+    <h1 id="shaderText" class="fontStyle">
+      SHADER
+    </h1>
+  </div>
+
+  <p id="description">FireWorks</p>
+
+  <p>
+    <button onclick="another();" class="shader-button">
+      Another One
+    </button>
+  </p>
+
+  <p>
+    <button onclick="JAVASCRIPT:window.open('https://didisoftwares.ddns.net/10/index.html');" class="shader-button">
+      Editor
+    </button>
+  </p>  
+
+  <h3><u>HOW TO USE</u></h3>
+  <p>After loading the Javascript module, just use the ShaderText function</p>
+  <pre><code class="language-javascript">
+    // Example usage:
+    &lt;script type="module"&gt;
+      import { ShaderText } from 'https://didisoftwares.ddns.net/10/shadertext.js';    
+
+      ShaderText(
+        element,
+        "vertex shader code here",
+        "fragment shader code here",
+        { frameSkip: 5, precision: "highp", alpha: false }
+      });
+
+    &lt;/script&gt;
+
+    </code></pre>
+
+    <h3><u>WORKING EXAMPLE</u></h3>  
+  <pre><code class="language-javascript">    
+    &lt;script type="module"&gt;
+      import { ShaderText } from 'https://didisoftwares.ddns.net/10/shadertext.js';    
+      ShaderText(
+        element,
+        `attribute vec2 position;\nvoid main() {\ngl_Position = vec4(position, 0, 1);\n}`,
+        `//Main\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nfragColor = vec4(1.0, 0.0, 0.0, 1.0);\n}`,
+        { frameSkip: 5, precision: "highp", alpha: false }
+      });
+      //codes can have \n instead of newline
+    &lt;/script&gt;
+    </code></pre>
+
+    <h3><u>✨ Special Comments on fragment shader (Magic Tags):</u></h3>
+    <pre><code class="language-javascript"></code>
+    //Main → Marks the fragment shader as the main output.
+    //iChannel0, //iChannel1, ... → Load textures (or buffers) as inputs.
+
+    🧪 Available Uniforms:    
+    iResolution → vec2 (canvas size in pixels)    
+    iTime → float (elapsed time in seconds)  
+    iMouse → vec4 (mouse input)  
+    iFrame → int (frame count)    
+    iChannel0 and iChannel1 → sampler2D (textures)
+  </code></pre>
+    
+
+  <script>
+    const phrases = [
+      "SHADER POWER",
+      "CODE YOUR VISION",
+      "GRAPHICS MAGIC",      
+      "PIXEL PERFECT",
+      "GLSL MASTER",
+      "ART WITH CODE"
+    ];
+
+    const textElement = document.getElementById("shaderText");
+    let currentIndex = 0;
+
+    function changeText() {
+      currentIndex = (currentIndex + 1) % phrases.length;
+      textElement.textContent = phrases[currentIndex];
+    }
+
+
+    setInterval(changeText, 5000);
+
+    function another() {
+      anotherFunction(this);
+    }
+  </script>
+
+  <script type="module">
+    import { ShaderText } from './shadertext.js';
+
+
+    function s1() {
+      document.getElementById('description').innerText = 'Burn - using precision:"mediump"';
+      ShaderText(
+        "shaderText",
+        `attribute vec2 position; void main() { gl_Position = vec4(position, 0, 1);}`,
+        `//iChannel0\nfloat rand(vec2 co){\nreturn fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);\n}\nfloat hermite(float t) {\nreturn t * t * (3.0 - 2.0 * t);\n}\nfloat noise(vec2 co, float frequency) {\nvec2 v = co * frequency;\nvec2 i = floor(v);\nvec2 f = fract(v);\nfloat a = rand(i);\nfloat b = rand(i + vec2(1.0, 0.0));\nfloat c = rand(i + vec2(0.0, 1.0));\nfloat d = rand(i + vec2(1.0, 1.0));\nvec2 u = vec2(hermite(f.x), hermite(f.y));  // ✅ Correção aqui\nreturn mix(mix(a, b, u.x), mix(c, d, u.x), u.y);\n}\nfloat pnoise(vec2 co, float freq, float persistence) {\nconst int steps = 5;\nfloat value = 0.0;\nfloat ampl = 1.0;\nfloat sum = 0.0;\nfor(int i = 0; i < steps; i++) {\nsum += ampl;\nvalue += noise(co, freq) * ampl;\nfreq *= 2.0;\nampl *= persistence;\n}\nreturn value / sum;\n}\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nvec2 uv = fragCoord.xy / iResolution.xy;\nfloat aspect = iResolution.x / iResolution.y;\n// Corrige o aspecto no cálculo do gradiente\nvec2 uvAspect = vec2(uv.x * aspect, uv.y);\n// Cálculo da altura da chama (reduzida com * 0.5)\nfloat gradient = (1.0 - uvAspect.y) * 0.5;\nfloat gradientStep = 0.2;\n// Posição com movimento vertical + aspecto corrigido\nvec2 pos = fragCoord.xy / iResolution.x;\npos.x *= aspect;\npos.y -= iTime * 0.3125;\n// Cores do fogo\nvec4 brighterColor = vec4(1.0, 0.65, 0.1, 0.25);\nvec4 darkerColor = vec4(1.0, 0.0, 0.15, 0.0625);\nvec4 middleColor = mix(brighterColor, darkerColor, 0.5);\n// Ruído procedural\nfloat noiseTexel = pnoise(pos, 8.0, 0.5);\n// Camadas com smoothstep\nfloat firstStep = smoothstep(0.0, noiseTexel, gradient);\nfloat darkerColorStep = smoothstep(0.0, noiseTexel, gradient - gradientStep);\nfloat darkerColorPath = firstStep - darkerColorStep;\n// Composição\nvec4 color = mix(brighterColor, darkerColor, darkerColorPath);\nfloat middleColorStep = smoothstep(0.0, noiseTexel, gradient - gradientStep * 2.0);\ncolor = mix(color, middleColor, darkerColorStep - middleColorStep);\ncolor = mix(vec4(0.0), color, firstStep);\n// Fumaça acima da chama\nfloat smokeThreshold = 0.3;\nfloat smokeIntensity = smoothstep(smokeThreshold, 0.0, gradient);\nfloat smokeFade = 1.0 - firstStep;\nfloat smokeNoise = pnoise(pos + vec2(0.0, iTime * 0.1), 4.0, 0.5);\nvec4 smokeColor = vec4(vec3(0.2 + smokeNoise * 0.1), 0.15) * smokeIntensity * smokeFade;\ncolor += smokeColor;\nfragColor = color;\n}\n//Main\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nvec2 uv = fragCoord.xy / iResolution.xy;\nfragColor = texture2D(iChannel0, uv); // Mostrar o bufferA como saída final\n}`
+        , { precision: "mediump" });
+    }
+
+
+    function s2() {
+      document.getElementById('description').innerText = 'Interactive Art - using default';
+      ShaderText(
+        "shaderText",
+        `attribute vec2 position; void main() { gl_Position = vec4(position, 0, 1);}`,
+        `//iChannel0\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nvec2 uv = fragCoord.xy / iResolution.xy;\n// Corrigir aspect ratio\nfloat aspect = iResolution.x / iResolution.y;\nvec2 mouse = iMouse.xy / iResolution.xy;\nvec2 uvAspect = vec2(uv.x * aspect, uv.y);\nvec2 mouseAspect = vec2(mouse.x * aspect, mouse.y);\nvec2 diff = uvAspect - mouseAspect;\n// Leitura do frame anterior\nvec4 prev = texture2D(iChannel0, uv);\nprev.rgb *= 0.985;\n// Movimento animado das cores\nfloat t = iTime * 0.2;\nvec3 baseColor;\nbaseColor.r = 0.5 + 0.5 * sin(uv.x * 5.0 + t);\nbaseColor.g = 0.5 + 0.5 * sin(uv.y * 5.0 + t + 2.0);\nbaseColor.b = 0.5 + 0.5 * sin((uv.x + uv.y) * 5.0 + t + 4.0);\n// Distância com aspect ratio corrigido\nfloat d = length(diff);\nfloat influence = smoothstep(0.2, 0.0, d);\nvec3 mouseSplash = vec3(\n0.5 + 0.5 * sin(iTime * 10.0),\n0.5 + 0.5 * sin(iTime * 12.0 + 2.0),\n0.5 + 0.5 * sin(iTime * 14.0 + 4.0)\n);\nvec3 result = mix(prev.rgb, baseColor, 0.02);\nresult += mouseSplash * influence * 0.3;\nresult = clamp(result, 0.0, 1.0);\nfragColor = vec4(result, 1.0);\n}\n//Main\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nvec2 uv = fragCoord.xy / iResolution.xy;\nfragColor = texture2D(iChannel0, uv); // Mostrar o bufferA como saída final\n}\n`);
+    }
+
+    function s3() {
+      document.getElementById('description').innerText = 'Folow Flame - using default';
+      ShaderText(
+        "shaderText",
+        `attribute vec2 position; void main() { gl_Position = vec4(position, 0, 1);}`,
+        `//iChannel0\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nvec2 uv = fragCoord.xy / iResolution.xy;\nfloat aspect = iResolution.x / iResolution.y;\n// Deslocamento do fogo/fumaça para cima\nvec2 flow = vec2(0.0, 0.02);\nvec4 prev = texture2D(iChannel0, uv - flow);\n// Dissipação\nprev.rgb *= 0.95;\n// Cor do fundo azul (ajustável)\nvec3 backgroundColor = vec3(0.8, 0.8, 0.8); // Azul escuro\n// Mistura do fundo azul com o que já existe\nprev.rgb = mix(backgroundColor, prev.rgb, 0.95); // controla o quanto o fundo aparece\n// Posição do mouse\nvec2 mouse = iMouse.xy / iResolution.xy;\nvec2 mouseAspect = vec2(mouse.x * aspect, mouse.y);\nvec2 uvAspect = vec2(uv.x * aspect, uv.y);\n// Jitter\nvec2 jitter = 0.01 * vec2(sin(iTime), cos(iTime * 0.7)) * vec2(aspect, 1.0);\n// Distância do mouse\nfloat d = length(uvAspect - (mouseAspect + jitter));\nfloat smoke = smoothstep(0.2, 0.0, d);\n// Cor do fogo (vermelho para amarelo)\nvec3 fireColor = mix(vec3(1.0, 0.0, 0.0), vec3(1.0, 1.0, 0.6), smoke);\n// Pulsação\nfloat pulse = 0.8 + 0.2 * sin(iTime * 15.0 + uv.y * 10.0);\nfireColor *= pulse;\n// Composição final\nfragColor = mix(prev, vec4(fireColor * 2.2, 1.0) * smoke, 0.1);\n}\n//Main\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nvec2 uv = fragCoord.xy / iResolution.xy;\nfragColor = texture2D(iChannel0, uv); // Mostrar o bufferA como saída final\n}\n`);
+    }
+
+    function s4() {
+      document.getElementById('description').innerText = 'Fireworks - using precision:"highp", frameSkip:8';
+      ShaderText(
+        "shaderText",
+        `attribute vec2 position; void main() { gl_Position = vec4(position, 0, 1);}`,
+        `//iChannel0\n#define PI 3.141592653589793\n#define EXPLOSION_COUNT 6.\n#define SPARKS_PER_EXPLOSION 64.\n#define EXPLOSION_DURATION 20.\n#define EXPLOSION_SPEED 5.\n#define EXPLOSION_RADIUS_THRESHOLD .06\n// Hash function\n#define MOD3 vec3(.1031, .11369, .13787)\nvec3 hash31(float p) {\nvec3 p3 = fract(vec3(p) * MOD3);\np3 += dot(p3, p3.yzx + 19.19);\nreturn fract(vec3(\n(p3.x + p3.y) * p3.z,\n(p3.x + p3.z) * p3.y,\n(p3.y + p3.z) * p3.x\n));\n}\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nvec2 uv = fragCoord / iResolution.xy;\nfloat aspect = iResolution.x / iResolution.y;\nuv.x *= aspect;\nfloat t = mod(iTime + 10.0, 7200.0);\nvec3 col = vec3(0.0);\nvec2 origin;\nfor (float j = 0.0; j < EXPLOSION_COUNT; j++) {\nvec3 oh = hash31((j + 1234.1939) * 641.6974);\norigin = vec2(oh.x, oh.y) * 0.6 + 0.2;\norigin.x *= aspect; //explosion aspect\nfloat localTime = mod(t * EXPLOSION_SPEED + (j + 1.0) * 9.6491 * oh.z, EXPLOSION_DURATION);\nif (localTime > 2.0) {\nfor (float i = 0.0; i < SPARKS_PER_EXPLOSION; i++) {\nvec3 h = hash31(j * 963.31 + i + 497.8943);\nfloat angle = h.x * PI * 2.0;\nfloat rScale = h.y * EXPLOSION_RADIUS_THRESHOLD;\nfloat radius = localTime * rScale;\nvec2 sparkPos = vec2(radius * cos(angle), radius * sin(angle));\n// Gravidade fake\nfloat gravityZone = 0.04;\nfloat fallFactor = (length(sparkPos) - (rScale - gravityZone)) / gravityZone;\nsparkPos.y -= pow(fallFactor, 3.0) * 6e-5;\n//float spark = 0.0002 / pow(length(uv - sparkPos - origin), 1.65);\nfloat d = length(uv - sparkPos - origin);\nfloat spark = 0.0002 / (d * sqrt(d) * sqrt(sqrt(d)));\n// Shimmer\nfloat sd = 2.0 * length(origin - sparkPos);\nfloat shimmer = max(0.0, sqrt(sd) * sin((t + h.y * 2.0 * PI) * 20.0));\nfloat shimmerThreshold = EXPLOSION_DURATION * 0.32;\nfloat fade = max(0.0, (EXPLOSION_DURATION - 5.0) * rScale - radius);\ncol += spark * mix(1.0, shimmer, smoothstep(\nshimmerThreshold * rScale,\n(shimmerThreshold + 1.0) * rScale,\nradius\n)) * fade * oh;\n}\n}\n}\n// Background gradiente\ncol = max(vec3(0.1), col);\ncol += vec3(0.12, 0.06, 0.02) * (1.0 - uv.y);\nfragColor = vec4(col, 1.0);\n}\n//Main\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nvec2 uv = fragCoord.xy / iResolution.xy;\nfragColor = texture2D(iChannel0, uv); // Mostrar o bufferA como saída final\n}`,
+        { frameSkip: 8, precision: "highp" });
+    }
+
+    var current = 2; // próximo é s2
+    s1(); // chamada inicial
+    let isLocked = false;
+
+    window.anotherFunction = (el) => {
+      if (isLocked) return; // 🔒 
+      isLocked = true;
+      setTimeout(() => { isLocked = false; }, 500); // ⏳
+      if (current === 1) s1();
+      if (current === 2) s2();
+      if (current === 3) s3();
+      if (current === 4) s4();
+      current = current === 4 ? 1 : current + 1;
+    };
+
+  </script>
+
+</body>
+
+</html>

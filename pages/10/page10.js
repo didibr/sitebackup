@@ -1,14 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 
-class Page10 {
+class Page11 {
     constructor() {        
     }
 
     OnHttpRequest(server,req, res) {
        
 
-if (req.method === "POST" && req.url === "/10/newshader") {
+if (req.method === "POST" && req.url === "/11/newshader") {
     server.WaiToCLOSE(true);
     let body = '';
     req.on('data', chunk => body += chunk);
@@ -19,7 +19,7 @@ if (req.method === "POST" && req.url === "/10/newshader") {
                 typeof data.frag === "string" && data.frag.trim() !== "" &&
                 typeof data.vert === "string" && data.vert.trim() !== "") {
                 
-                const saveDir = '/www/pages/10/gls'; // Pasta onde salvar
+                const saveDir = '/www/pages/11/gls'; // Pasta onde salvar
                 if (!fs.existsSync(saveDir)) fs.mkdirSync(saveDir);
 
                 const files = fs.readdirSync(saveDir);
@@ -59,4 +59,4 @@ if (req.method === "POST" && req.url === "/10/newshader") {
 
 }
 
-module.exports = new Page10();
+module.exports = new Page11();

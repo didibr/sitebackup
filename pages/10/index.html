@@ -7,11 +7,11 @@
   <title>Shader</title>
   <script src="codemirror.js"></script>
   <link rel="stylesheet" href="codemirror.css">
-
 </head>
 
 <body>
-  <div id="myContainer"></div>
+  <div id="myContainer">
+  </div>
 
   <div class="tabs">
     <div class="content-area">
@@ -32,37 +32,35 @@
 
       <div id="constants" class="tab-content">
         <ul>
-          <li>float time</li>
-          <li>vec2 resolution</li>
-          <li>vec3 color</li>
+          <li>iResolution → vec2 (canvas size in pixels)</li>
+          <li>iTime → float (elapsed time in seconds)</li>
+          <li>iMouse → vec4 (mouse input)</li>
+          <li>iFrame → int (frame count)</li>
+          <li>iChannel0 to iChannel1 → sampler2D (textures)
+            <p>//iChannelX = IMAGE -> Load Static Texture</p>
+            <p>//iChannelX -> FragmentBuffer start code</p>
+          </li>
           <!-- Adicione mais constantes aqui -->
         </ul>
       </div>
 
       <div id="samples" class="tab-content" style="overflow: auto">
-
-        <!-- Formulário antes da lista -->
         <div class="form-area">
           <input type="text" id="name" placeholder="Name" class="form-input">
           <input type="email" id="email" placeholder="Mail" class="form-input">
           <button onclick="sendForm()" class="form-button">UPLOAD</button>
         </div>
-
-        <!-- Lista dos botões existentes -->
-        <ul>          
-        </ul>
+        <ul></ul>
       </div>
-
-
-      
     </div>
 
     <button class="bottom-button" onclick="applyShader();">EXECUTE</button>
     <div id="errordiv" class="bottom-bar-fixed">
       errors
     </div>
+  </div>
 
-    <script type="module" src="vanila.js"></script>
+  <script type="module" src="vanila.js"></script>
 </body>
 
 </html>
