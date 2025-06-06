@@ -1,0 +1,194 @@
+<div id="myContainer">z</div>
+ <script type="importmap">
+{
+"imports": {
+"three": "./three/module.js",
+"three/addons/": "./three/"}
+}
+</script>
+<script type="module">
+console.log('START IMPORT');
+ 
+import * as THREE from 'https://didisoftwares.ddns.net/codepen/module.js';  
+import { POSTPROCESS } from 'https://didisoftwares.ddns.net/codepen/postprocess.js';
+import { EVENTS } from 'https://didisoftwares.ddns.net/codepen/events.js'
+import { Terrain } from 'https://didisoftwares.ddns.net/codepen/terrain.js'
+  
+console.log('END');
+</script>
+
+
+
+class GameEngine {
+  constructor(THREE, POSTPROCESS, EVENTS, Terrain) {
+    this.THREE = THREE;
+    this.POSTPROCESS = POSTPROCESS;
+    this.EVENTS = EVENTS;
+    this.Terrain = Terrain;
+
+    this.container = null;
+    this.scene = null;
+    this.camera = null;
+    this.renderer = null;
+    this.controls = null;
+    this.postprocess = new POSTPROCESS();
+
+    this.terrain = null;
+    this.clock = new THREE.Clock();
+
+    this.timestep = 1 / 60;
+    this.maxSubSteps = 5;
+    this.accumulator = 0;
+    this.physics = null;
+
+    this.raycaster = new THREE.Raycaster();
+    this.raycasterDisabled = false;
+    this.rayintersects = [];
+
+    this.angleY = 0;
+    this.lastpoint = new THREE.Vector2();
+
+    this.EVENTS.create(THREE);
+    this.EVENTS.onClick = (mouse) => this.onClick(mouse);
+  }
+
+  async init(containerId = "myContainer") {
+		
+    this.container = document.getElementById(containerId);
+
+    this.renderer = new this.THREE.WebGLRenderer({ alpha: false, antialias: false });
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = this.THREE.PCFShadowMap;
+    this.renderer.toneMapping = this.THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 0.5;
+    this.container.appendChild(this.renderer.domElement);
+
+    this.scene = new this.THREE.Scene();
+    this.camera = new this.THREE.PerspectiveCamera(55, this.container.clientWidth / this.container.clientHeight, 1, 20000);
+    this.camera.position.set(0, 40, 30);
+
+    this.controls = new this.THREE.OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.update();
+
+    await this.postprocess.createPostProcess();
+    if (this.isWebGL2Supported()) {
+      this.postprocess.filters.N8AO.enabled = false;
+    }
+    this.postprocess.filters.SMAA.enabled = true;
+
+    this.createObjects();
+    this.animate();
+
+    window.addEventListener('resize', () => this.onWindowResize());
+  }
+
+  isWebGL2Supported() {
+    try {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('webgl2');
+      canvas.remove();
+      return !!(window.WebGL2RenderingContext && context);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  onWindowResize() {
+    this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+  }
+
+  animate() {
+    const deltaTime = this.clock.getDelta();
+    const elapsedTime = this.clock.getElapsedTime();
+    const safeDelta = Math.min(deltaTime, 0.1);
+
+    this.accumulator += safeDelta;
+    let substeps = 0;
+    if (this.physics && this.physics.update) {
+      while (this.accumulator >= this.timestep && substeps < this.maxSubSteps) {
+        this.physics.update(this.timestep);
+        this.accumulator -= this.timestep;
+        substeps++;
+      }
+    }
+
+    this.postprocess.update(safeDelta, elapsedTime);
+    this.render();
+    requestAnimationFrame(() => this.animate());
+  }
+
+  render() {
+    if (this.terrain) {
+      this.terrain.update();
+      this.updateCamera();
+    }
+
+    this.postprocess.render(() => { });
+
+    if (!this.raycasterDisabled && this.EVENTS.mousePos != null) {
+      this.raycaster.setFromCamera(this.EVENTS.mousePos, this.camera);
+    }
+  }
+
+  onClick(mouseButtons) {
+    if (mouseButtons.left !== 1) return;
+
+    this.raycaster.layers.set(0);
+    this.rayintersects = this.raycaster.intersectObjects(this.scene.children, true);
+    if (this.rayintersects.length === 0) return;
+
+    const intercept = this.rayintersects[0];
+    const object = intercept.object;
+
+    console.log("Clicked object:", object);
+  }
+
+  createObjects() {
+    this.terrain = new this.Terrain(this.scene, this.camera, {
+      chunkSize: 160,
+      chunkResolution: 50,
+      renderDistance: 2,
+      noiseScale: 0.008,
+      noiseAmplitude: 10,
+    });
+
+    this.camera.position.set(0, 20, 40);
+    this.controls.target.set(0, 10, 0);
+    this.controls.update();
+    this.camera.rotation.set(0, 0, 0);
+    this.controls.enabled = false;
+
+    this.terrain.setSunPositionByHour(40);
+    navigator.wakeLock?.request('screen');
+
+    window.T = this.terrain; // Para debug externo se quiser
+  }
+
+  updateCamera() {
+    if (!this.terrain || !this.camera?.position) return;
+
+    const speed = 0.8;
+    if (this.EVENTS._keyMap['KeyA']) this.angleY += 0.02 * speed;
+    if (this.EVENTS._keyMap['KeyD']) this.angleY -= 0.02 * speed;
+
+    const dx = Math.sin(this.angleY) * speed;
+    const dz = Math.cos(this.angleY) * speed;
+
+    this.camera.position.x -= dx;
+    this.camera.position.z -= dz;
+    this.camera.rotation.y = this.angleY;
+
+    const posX = this.camera.position.x;
+    const posZ = this.camera.position.z;
+
+    if (this.lastpoint.distanceTo(new this.THREE.Vector2(posX, posZ)) > 0.5) {
+      this.lastpoint.set(posX, posZ);
+      const groundY = this.terrain.getHeightInterpolatedWithMods(posX, posZ);
+      this.camera.position.y = groundY + 3;
+    }
+  }
+}
