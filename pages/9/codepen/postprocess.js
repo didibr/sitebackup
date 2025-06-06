@@ -1,4 +1,4 @@
-import * as THREE from 'https://didisoftwares.ddns.net/codepen/module.min.js';
+import * as THREE from 'https://cdn.jsdelivr.net/gh/didibr/sitebackup/pages/9/codepen/module.min.js';
 
 var darkmaterials = {};
 window.finalComposer = null;
