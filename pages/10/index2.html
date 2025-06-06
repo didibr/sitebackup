@@ -83,7 +83,7 @@
   <pre><code class="language-javascript">
     // Example usage:
     &lt;script type="module"&gt;
-      import { ShaderText } from 'https://didisoftwares.ddns.net/10/shadertext.js';    
+      import { ShaderText, ShaderUniform } from 'https://didisoftwares.ddns.net/10/shadertext.js';    
 
       ShaderText(
         element,
@@ -99,14 +99,21 @@
     <h3><u>WORKING EXAMPLE</u></h3>  
   <pre><code class="language-javascript">    
     &lt;script type="module"&gt;
-      import { ShaderText } from 'https://didisoftwares.ddns.net/10/shadertext.js';    
+      import { ShaderText, ShaderUniform } from 'https://didisoftwares.ddns.net/10/shadertext.js';    
       ShaderText(
         element,
         `attribute vec2 position;\nvoid main() {\ngl_Position = vec4(position, 0, 1);\n}`,
         `//Main\nvoid mainImage(out vec4 fragColor, in vec2 fragCoord) {\nfragColor = vec4(1.0, 0.0, 0.0, 1.0);\n}`,
         { frameSkip: 5, precision: "highp", alpha: false }
       });
-      //codes can have \n instead of newline
+      /*codes can have \n instead of newline
+        ShaderUniform can set value of Uniforms
+        EXAMPLE:
+        ShaderUniform('iTime', 3.14);                      // float
+        ShaderUniform('iResolution', [800, 600, 1]);       // vec3
+        ShaderUniform('lightColor', [1.0, 0.8, 0.6, 1.0]);  // vec4
+        ShaderUniform('useLighting', true);                // bool/int
+      */
     &lt;/script&gt;
     </code></pre>
 

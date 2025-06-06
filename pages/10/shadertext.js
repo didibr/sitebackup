@@ -417,7 +417,12 @@ function sampleExec() {
     }`);
     setTimeout(() => { resizeCanvas(); }, 100);
 }
-export function ShaderText(object, vertexCode, fragmentCode, options = { frameSkip: 5, precision: "highp", alpha: false }) {
+export function ShaderText(
+    object, 
+    vertexCode, 
+    fragmentCode, 
+    options = { frameSkip: 5, precision: "highp", alpha: false },
+    ) {
     init(options);
     vertexCode = vertexCode.replaceAll('\\n', '\n');
     fragmentCode = fragmentCode.replaceAll('\\n', '\n');
@@ -451,3 +456,31 @@ export function ShaderText(object, vertexCode, fragmentCode, options = { frameSk
         subtree: true
     });
 }
+
+export function ShaderUniform(name, value) {
+    const location = gl.getUniformLocation(program, name);
+    if (!location) {
+      console.warn(`Uniform '${name}' not found.`);
+      return;
+    }  
+    // Detecta tipo pelo valor
+    if (typeof value === 'number') {
+      gl.uniform1f(location, value); // float
+    } else if (typeof value === 'boolean') {
+      gl.uniform1i(location, value ? 1 : 0);
+    } else if (Array.isArray(value)) {
+      switch (value.length) {
+        case 1: gl.uniform1f(location, value[0]); break;
+        case 2: gl.uniform2f(location, value[0], value[1]); break;
+        case 3: gl.uniform3f(location, value[0], value[1], value[2]); break;
+        case 4: gl.uniform4f(location, value[0], value[1], value[2], value[3]); break;
+        case 9: gl.uniformMatrix3fv(location, false, value); break;
+        case 16: gl.uniformMatrix4fv(location, false, value); break;
+        default:
+          console.warn(`Uniform '${name}' has unsupported array length: ${value.length}`);
+      }
+    } else {
+      console.warn(`Uniform '${name}' has unsupported type:`, typeof value);
+    }
+  }
+  
