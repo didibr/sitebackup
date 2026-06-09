@@ -1,0 +1,18 @@
+[Info]
+Version = 3
+
+[Effect]
+Obj = fx\fx.fx
+Obj.show = true
+Obj[1] = fx\3.fx
+Obj[2] = fx\3.fx
+Obj[3] = fx\3.fx
+Obj[4] = fx\3.fx
+Obj[5] = fx\3.fx
+Obj[7] = fx\2.fx
+Obj[8] = fx\2.fx
+Obj[9] = fx\2.fx
+Obj[10] = fx\2.fx
+Obj[14] = fx\1.fx
+Obj[15] = fx\2.fx
+

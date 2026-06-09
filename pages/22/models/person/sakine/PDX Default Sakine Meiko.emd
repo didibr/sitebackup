@@ -1,0 +1,22 @@
+[Info]
+Version = 3
+
+[Effect]
+Obj = fx\fx.fx
+Obj.show = true
+Obj[1] = fx\glove\fx.fx
+Obj[1].show = true
+Obj[2] = fx\headphone\fx.fx
+Obj[2].show = true
+Obj[3] = fx\outer\fx.fx
+Obj[4] = fx\skirt\fx.fx
+Obj[4].show = true
+Obj[5] = fx\skirt\fx.fx
+Obj[5].show = true
+Obj[6] = fx\skirt\fx.fx
+Obj[6].show = true
+Obj[8] = fx\hair\fx.fx
+Obj[17] = fx\hair\fx.fx
+Obj[18] = fx\skirt\fx.fx
+Obj[35] = fx\1.fx
+

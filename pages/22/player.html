@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+    <title>Dance</title>
+    <link rel="stylesheet" href="player.css" />
+</head>
+
+<body>
+
+
+    <div id="audioUnlock" class="unlock-overlay">
+    <div class="unlock-box glass3d">
+      <div class="unlock-title">🔊 Activate Audio</div>
+      <button id="unlockBtn" class="btn btn-primary w-100">Click to Start</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="layout">
+
+      <!-- PLAYER -->
+      <div id="pContainer" class="player-container">
+        <!-- RECEIVING CANVAS -->
+      </div>
+
+      <!-- CONTROLES -->
+      <div class="controls-bar">
+        <button id="playBtn" onclick="fncPlay()">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+
+        <button id="stopBtn" onclick="fncStop()">
+          <svg viewBox="0 0 24 24">
+            <rect x="6" y="6" width="12" height="12" />
+          </svg>
+        </button>
+
+        <button id="nextBtn" onclick="fncNext()">
+          <svg viewBox="0 0 24 24">
+            <path d="M5 5v14l8-7z" /> <!-- primeiro triângulo -->
+            <path d="M13 5v14l8-7z" /> <!-- segundo triângulo -->
+            <rect x="21" y="5" width="2" height="14" /> <!-- barra -->
+          </svg>
+        </button>
+      </div>
+
+      <!-- PLAYLIST -->
+      <div class="playlist-panel glass3d">
+        <div class="select-wrapper mb-2">
+          <select id="playlistSelect" class="form-select" onchange="changePlaylist(this.value)"></select>
+        </div>
+        <div id="playlist" class="playlist"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <audio id="player"></audio>
+
+
+    <script type="module">
+	    import 'https://didisoftwares.ddns.net/22/module.js';
+        //const container=document.getElementById('pContainer');
+        //createRender(document.getElementById('pContainer'));
+    </script>
+  
+  
+    <script type="text/javascript" src="player.js"></script>
+</body>
+
+</html>
