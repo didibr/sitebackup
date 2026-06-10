@@ -1,0 +1,90 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <title>Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+   <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+ 
+<div id="audioUnlock" class="unlock-overlay">
+  <div class="unlock-box glass3d">
+    <div class="unlock-title">🔊 Activate Audio</div>
+    <button id="unlockBtn" class="btn btn-primary w-100">
+      Click to Start
+    </button>
+  </div>
+</div>
+
+<div class="main">
+
+  <div id="status"></div>
+  <div id="inputContainer" class="px-2"></div>
+  <div id="aboutdiv"></div>
+
+
+  <div class="player-container">
+
+  <div id="paa" class="player-bg">
+    <canvas id="bgShader"></canvas>
+  </div>
+
+  <div class="player-wrapper">
+    <div class="player-circle">
+
+      <!-- CANVAS PARA SHADER -->
+      <canvas id="circularFX"></canvas>
+
+      <div  class="circle-content">
+
+        <!-- SELECT NO TOPO -->
+        <div class="select-wrapper top-select">
+          <select id="playlistSelect" class="form-select" onchange="changePlaylist(this.value)"></select>
+        </div>
+
+        <!-- DISCO CENTRAL -->
+        <div class="center-disc">
+          <div id="musicName">No Track</div>
+        </div>
+
+        <!-- CONTROLES -->
+        <div class="circle-controls">
+          <button id="playBtn" onclick="fncPlay()">▶</button>
+          <button id="stopBtn" onclick="fncStop()">⏹</button>
+          <button id="nextBtn" onclick="fncNext()">⏭</button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+
+
+  <!-- AUDIO (OCULTO) -->
+
+<audio id="player"></audio>
+
+  <!-- PLAYLIST -->
+
+  <div class="bottom-playlist glass3d hideoniframe">
+    <div id="playlist" class="playlist"></div>
+  </div>
+
+</div>
+
+<script src="./main.js"></script>
+<script type="module">
+    import { ShaderPlay } from "https://didisoftwares.ddns.net/10/shaderplay_new.js";
+    const shader = ShaderPlay.create();
+    startShader(shader);
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,241 @@
+@import url("https://didisoftwares.ddns.net/bootstrap/css/bootstrap.min.css");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap");
+
+body {
+margin: 0;
+height: 100vh;
+background: radial-gradient(circle at 20% 20%, rgba(0,180,255,0.25), transparent 40%),
+radial-gradient(circle at 80% 30%, rgba(0,120,255,0.25), transparent 40%),
+linear-gradient(135deg, #0a0f1f, #0e1a35);
+font-family: "Inter", sans-serif;
+overflow: hidden;
+}
+
+/* LAYOUT */
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* 🔥 CENTRALIZA VERTICAL */
+    height: 100vh;
+}
+
+/* PLAYER CENTRAL */
+.player-wrapper {
+    position: relative;
+
+    width: 420px;
+    height: 420px;
+
+    margin: auto; /* centraliza no layout */
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 🔥 PLAYER CIRCULAR */
+.player-circle {
+    position: absolute;
+
+    inset: 0;          /* ocupa todo wrapper */
+    margin: auto;      /* centraliza perfeito */
+
+    width: 100%;
+    height: 100%;
+
+    border-radius: 50%;
+}
+
+/* CANVAS (SHADER) */
+#circularFX {
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+z-index: 0;
+}
+
+/* CONTEÚDO */
+.circle-content {
+position: relative;
+z-index: 2;
+width: 100%;
+height: 100%;
+}
+
+/* SELECT NO TOPO */
+.top-select {
+position: absolute;
+top: 15px;
+left: 50%;
+transform: translateX(-50%);
+width: 70%;
+opacity: 0.7;
+}
+
+/* SELECT GLASS */
+.select-wrapper {
+border-radius: 14px;
+overflow: hidden;
+backdrop-filter: blur(10px);
+background: rgba(255,255,255,0.05);
+}
+
+/* DISCO CENTRAL */
+.center-disc {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 180px;
+height: 180px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+text-align: center;
+
+color: #cfefff;
+font-size: 14px;
+
+backdrop-filter: blur(20px);
+
+/* 🔥 PROGRESSO CIRCULAR */
+background: conic-gradient(
+    rgba(0,200,255,0.5) var(--progress, 0%),
+    rgba(255,255,255,0.05) var(--progress, 0%)
+);
+
+box-shadow:
+    0 0 30px rgba(0,120,255,0.3),
+    inset 0 0 20px rgba(0,180,255,0.2);
+
+opacity: 0.9;
+}
+
+/* TEXTO CENTRAL */
+#musicName {
+padding: 10px;
+pointer-events: none;
+}
+
+/* CONTROLES */
+.circle-controls {
+position: absolute;
+bottom: 25px;
+left: 50%;
+transform: translateX(-50%);
+display: flex;
+gap: 15px;
+opacity: 0.8;
+}
+
+.circle-controls button {
+width: 55px;
+height: 55px;
+border-radius: 50%;
+border: none;
+
+background: rgba(255,255,255,0.08);
+color: #aee6ff;
+backdrop-filter: blur(10px);
+transition: 0.2s;
+
+}
+
+.circle-controls button:hover {
+background: linear-gradient(135deg, #00c6ff, #0072ff);
+color: white;
+transform: scale(1.1);
+}
+
+/* PLAYLIST */
+.bottom-playlist {
+width: 100%;
+max-width: 420px;
+height: 200px;
+margin-bottom: 10px;
+padding: 10px;
+}
+
+.playlist {
+overflow-y: auto;
+height: 100%;
+}
+
+.music-item {
+padding: 8px;
+border-radius: 10px;
+background: rgba(255,255,255,0.05);
+margin-bottom: 5px;
+cursor: pointer;
+color: #cfefff;
+}
+
+.music-item:hover {
+background: rgba(0,120,255,0.4);
+}
+
+/* UNLOCK */
+.unlock-overlay {
+position: fixed;
+inset: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+background: rgba(0,0,0,0.4);
+z-index: 999;
+}
+
+.unlock-box {
+padding: 20px;
+border-radius: 16px;
+backdrop-filter: blur(20px);
+background: rgba(255,255,255,0.1);
+}
+
+.unlock-title {
+margin-bottom: 10px;
+color: #fff;
+}
+
+/* CONTAINER BASE (define tamanho real) */
+.player-container {
+    position: relative;
+
+    width: 420px;
+    height: 420px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 🔥 FUNDO (MESMO TAMANHO EXATO) */
+.player-bg {
+    position: absolute;
+    inset: 0;           /* ocupa exatamente o container */
+    z-index: 0;
+
+    pointer-events: none;
+}
+
+/* CANVAS */
+#bgShader {
+    width: 100%;
+    height: 100%;
+}
+
+/* PLAYER NA FRENTE */
+.player-wrapper {
+    position: relative;
+    z-index: 2;
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

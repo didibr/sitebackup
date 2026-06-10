@@ -1,0 +1,54 @@
+﻿//iChannel0
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord.xy / iResolution.xy;
+    float aspect = iResolution.x / iResolution.y;
+
+    // Deslocamento do fogo/fumaça para cima
+    vec2 flow = vec2(0.0, 3.0 / iResolution.y);
+    vec4 prev = texture2D(iChannel0, uv - flow);
+
+    // Dissipação
+    prev.rgb *= 0.95;
+
+    // Cor do fundo azul (ajustável)
+    vec3 backgroundColor = vec3(0.8, 0.8, 0.8); // Azul escuro
+
+    // Mistura do fundo azul com o que já existe
+    prev.rgb = mix(backgroundColor, prev.rgb, 0.95); // controla o quanto o fundo aparece
+
+    // Posição do mouse
+    vec2 mouse = iMouse.xy / iResolution.xy;
+    vec2 mouseAspect = vec2(mouse.x * aspect, mouse.y);
+    vec2 uvAspect = vec2(uv.x * aspect, uv.y);
+
+    // Jitter
+    //vec2 jitter = 0.01 * vec2(sin(iTime), cos(iTime * 0.7)) * vec2(aspect, 1.0);
+    float px = 1.0 / iResolution.y;
+    
+    vec2 jitter =px * 3.0 * vec2(sin(iTime), cos(iTime * 0.7)) * vec2(aspect, 1.0);
+
+    // Distância do mouse
+    float d = length(uvAspect - (mouseAspect + jitter));
+    //float smoke = smoothstep(0.2, 0.0, d);
+    float radius = 40.0 / iResolution.y;
+    float smoke = smoothstep(radius, 0.0, d);
+    
+
+    // Cor do fogo (vermelho para amarelo)
+    vec3 fireColor = mix(vec3(1.0, 0.0, 0.0), vec3(1.0, 1.0, 0.6), smoke);
+
+    // Pulsação
+    float pulse = 0.8 + 0.2 * sin(iTime * 15.0 + uv.y * 10.0);
+    fireColor *= pulse;
+
+    // Composição final
+    fragColor = mix(prev, vec4(fireColor * 2.2, 1.0) * smoke, 0.1);
+}
+
+
+
+//Main
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord.xy / iResolution.xy;
+    fragColor = texture2D(iChannel0, uv); // Mostrar o bufferA como saída final
+}

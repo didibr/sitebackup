@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Cars</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+	<script>
+		function hasWebGL2() {
+			try {
+				const canvas = document.createElement('canvas');
+				return !!canvas.getContext('webgl2');
+			} catch (e) {
+				return false;
+			}
+		}
+
+		const useWebGL2 = hasWebGL2();		
+		let threePath = "./three/three.module.min1.js";
+		if(!useWebGL2)threePath = "./three/three.module.min2.js";						
+		const importMap = document.createElement('script');
+		importMap.type = 'importmap';
+		importMap.textContent = JSON.stringify({
+			imports: {
+				"three": threePath,
+				"three/": "./three/",
+				"engine/": "./engine/"
+			}
+		});
+
+		document.currentScript.after(importMap);
+	</script>
+
+	<!-- só depois carrega seu módulo -->
+	<script src="./paper.js"></script>
+	<script type="module">
+		import './module.js';
+	</script>
+
+</body>
+
+</html>

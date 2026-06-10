@@ -1,0 +1,25 @@
+Crie uma imagem para parallax:
+
+- resolução total: 2048x2048
+- 5 layers horizontais separados (com espaço transparente entre eles)
+- cada layer com a mesma altura
+- alinhamento central
+- estilo: pixel art leve, cores vibrantes
+- mesmos tamanhos e espaçamentos
+
+Layers (de cima para baixo):
+1. Céu com degradê + nuvens
+2. Montanhas bem distantes
+3. Montanhas médias
+4. Árvores (floresta)
+5. Chão/grama (tileável horizontalmente)
+
+Regras:
+- cada layer deve ser contínuo na horizontal (tileable)
+- sem elementos cortados nas bordas
+- manter separação clara entre layers (para recorte)
+- fundo transparente fora dos elementos
+- mesmo espaçamento vertical entre layers da imagem anterior
+- estilo pixel art leve
+
+Tema: DESERTO / NEVE / NOITE / CIDADE / etc

@@ -1,0 +1,120 @@
+Minha engine de shader é inspirada no Shadertoy, usando WebGL GLSL fragment shaders com multipass e pingpong real.
+
+O shader inteiro é escrito em UM ÚNICO texto/script.
+
+A separação dos passes é feita por comentários especiais:
+
+//iChannel0
+inicia o Buffer0
+
+//iChannel1
+inicia o Buffer1
+
+//Main
+inicia o shader final exibido na tela
+
+Os buffers podem ler:
+
+* iChannelX de outros buffers
+* o próprio iChannelX (self feedback/pingpong)
+* iVideoX
+* iAudioX
+
+Exemplo:
+Buffer0 pode usar texture2D(iChannel0, uv) para feedback temporal.
+
+A engine suporta:
+
+* multipass
+* self pingpong real
+* feedback temporal
+* accumulation
+* trails
+* blur temporal
+* fluid effects
+* reaction diffusion
+* motion blur
+* efeitos complexos estilo Shadertoy
+
+O sistema usa:
+
+* read texture
+* write texture
+* swap() por frame
+
+Cada textura possui framebuffer próprio fixo:
+
+* readFBO
+* writeFBO
+
+O swap ocorre SOMENTE após todos os buffers renderizarem no frame atual.
+
+IMPORTANTE:
+
+* os shaders devem ser compatíveis com WebGL1 / GLSL ES
+* usar texture2D()
+* evitar loops extremamente pesados
+* usar precision highp float;
+* evitar recursos exclusivos de WebGL2
+
+Uniforms disponíveis:
+
+iResolution vec3
+iTime float
+iTimeDelta float
+iFrame float
+iFrameRate float
+iMouse vec4
+iDate vec4
+
+Texturas:
+iChannel0..N
+iVideo0..N
+iAudio0..N
+
+Vídeos:
+iVideoX é uma textura de vídeo atualizada em tempo real.
+
+Áudio:
+iAudioX contém FFT em textura.
+
+Os shaders devem ser retornados completos no formato:
+
+//iChannel0
+...
+
+//iChannel1
+...
+
+//Main
+...
+
+Ou apenas:
+
+//Main
+...
+
+quando não precisar multipass.
+
+Os exemplos devem priorizar:
+
+* efeitos visuais avançados
+* efeitos cinematográficos
+* feedback shaders
+* raymarching
+* blur
+* distorções
+* glitch
+* fluidos
+* trails
+* miniatura/tilt-shift
+* CRT
+* VHS
+* cyberpunk
+* synthwave
+* efeitos abstratos complexos
+* shaders interativos com mouse
+* efeitos usando vídeo em iVideo0
+
+
+diga só OK, se etendeu

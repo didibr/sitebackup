@@ -1,0 +1,72 @@
+﻿@import url("https://didisoftwares.ddns.net/bootstrap/css/bootstrap.min.css");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap");
+
+body{margin:0;height:100vh;background:radial-gradient(circle at 20% 20%,rgba(140,0,255,.25),transparent 40%),radial-gradient(circle at 80% 30%,rgba(180,0,255,.25),transparent 40%),linear-gradient(135deg,#0a0f1f,#1a0e2a);font-family:Inter,sans-serif;overflow:hidden}
+
+.main{height:100vh;display:flex;align-items:center;justify-content:center}
+
+.layout{display:flex;align-items:center;justify-content:center;gap:3vw;width:100%;height:100%;padding:2vh 2vw;box-sizing:border-box}
+
+.player-container{position:relative;width:min(60vmin,520px);aspect-ratio:1;min-width:220px}
+
+.player-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+#bgShader{width:100%;height:100%}
+
+.player-wrapper{position:absolute;inset:0;z-index:2}
+.player-circle{position:absolute;inset:0;border-radius:50%}
+
+#circularFX{position:absolute;inset:0;width:100%;height:100%}
+
+.circle-content{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+
+.center-disc{width:62%;aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;backdrop-filter:blur(10px);
+    --progress: 0%;
+    --e:var(--energy,0);
+    background:conic-gradient(hsla(calc(260 + var(--e) * 60),100%,calc(30% + var(--e) * 40%),0.8) var(--progress,0%),rgba(255,255,255,0.05) var(--progress,0%));box-shadow:0 0 calc(10px + var(--energy) * 30px) hsla(calc(260 + var(--energy) * 60),100%,65%,0.6);transform:scale(calc(1 + var(--energy) * 0.08));transition:transform .05s linear}
+
+.controls-bar{display:flex;flex-direction:column;gap:1.2rem}
+
+.controls-bar button{width:clamp(45px,5vmin,60px);height:clamp(45px,5vmin,60px);border-radius:50%;border:none;background:rgba(255,255,255,.06);color:#e0b3ff;backdrop-filter:blur(10px);transition:.2s}
+.controls-bar button:hover{background:linear-gradient(135deg,#7a00ff,#c000ff);color:#fff;transform:scale(1.1)}
+
+.playlist-panel{display:flex;flex-direction:column;width:clamp(260px,35vw,420px);height:min(60vmin,520px);min-width:200px;padding:10px}
+
+.playlist{flex:1;overflow-y:auto}
+
+.music-item{padding:10px;border-radius:10px;background:rgba(255,255,255,.04);margin-bottom:6px;cursor:pointer;color:#e6ccff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(11px,1.4vmin,14px);transition:.2s}
+
+.music-item:hover{background:rgba(140,0,255,.35);box-shadow:0 0 6px rgba(180,0,255,.4)}
+
+.select-wrapper select{background:rgba(255,255,255,.06)!important;color:#e6ccff;border:none;outline:none;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);appearance:none;-webkit-appearance:none;-moz-appearance:none;padding:8px 12px;border-radius:10px}
+
+.select-wrapper{position:relative}
+
+.select-wrapper::after{content:"▼";position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#d9a3ff;pointer-events:none;font-size:10px}
+
+@media (max-width:800px){.layout{flex-direction:column;gap:20px}.controls-bar{flex-direction:row}.playlist-panel{width:80vw;height:30vh}}
+
+.unlock-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4);z-index:999}
+.unlock-box{padding:20px;border-radius:16px;backdrop-filter:blur(20px);background:rgba(255,255,255,.08)}
+.unlock-title{margin-bottom:10px;color:#fff}
+
+#musicName{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+
+.text-circle{width:100%;height:100%;animation:rotateText 24s linear infinite}
+
+.text-circle text{fill:#e6ccff;font-size:10px;letter-spacing:2px}
+.text-circle text{dominant-baseline:middle}
+
+@keyframes rotateText{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+.controls-bar button svg{width:55%;height:55%;fill:currentColor;pointer-events:none}
+
+.playlist::-webkit-scrollbar{width:8px}
+.playlist::-webkit-scrollbar-track{background:transparent}
+.playlist::-webkit-scrollbar-thumb{background:rgba(160,0,255,.4);border-radius:10px}
+.playlist::-webkit-scrollbar-thumb:hover{background:rgba(200,0,255,.7)}
+
+.select-wrapper select{background:rgba(255,255,255,.06);color:#e6ccff;border:none;outline:none}
+
+.select-wrapper select option{background:#f34b09;color:#e6ccff}
+
+.music-item.active{background:rgba(160,0,255,.45);box-shadow:0 0 10px rgba(200,0,255,.6);color:#fff}

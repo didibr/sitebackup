@@ -1,0 +1,435 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <title>Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @font-face {
+      font-family: 'Roboto';
+      src: url('./roboto-black.ttf') format('truetype');
+      font-weight: 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: "Inter", sans-serif;
+      background-color: black;
+    }
+
+    .fontStyle {
+      font-size: 8vw;
+      /*font-family: 'Roboto', sans-serif;*/
+      text-align: center;
+      width: 640px;
+      height: 360px;
+      display: block;
+      border: 1px solid white;
+    }
+  </style>
+</head>
+
+<body>
+  <input type="button" onclick="ShaderPlayEditor.show();" value="Editor"
+    style="padding: 6px; margin: 5px; background-color: aqua;">
+
+    <p>aa</p>
+    <p>aa</p>
+    
+  <div id="shaderText" class="fontStyle">
+  </div>
+
+  
+
+
+  <script type="module">
+    import { ShaderPlay } from "https://didisoftwares.ddns.net/10/shaderplay1.js";
+    const shader = ShaderPlay.create();
+    window.SS=shader;
+    shader.setResolution(320,180);
+    
+    //shader.createImageChannel("https://cdn.jsdelivr.net/gh/didibr/sitebackup/pages/10/flor.jpg",2);
+    const imgx="https://cdn.jsdelivr.net/gh/didibr/sitebackup/pages/10/flor.jpg";
+    shader.createVideoChannel("https://didisoftwares.ddns.net/10/videos/sp.mp4",0);
+
+const aa0=`
+//iChannel2 = ${imgx}
+//Main
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord / iResolution.xy;
+    fragColor = texture2D(iChannel2, uv);
+}`
+
+    const aa1 = `
+//iChannel0
+precision highp float;
+
+vec3 blurVideo(vec2 uv,float radius){
+
+    vec2 px=1.0/iResolution.xy;
+
+    vec3 col=vec3(0.0);
+
+    float total=0.0;
+
+    for(int x=-4;x<=4;x++){
+        for(int y=-4;y<=4;y++){
+
+            vec2 offs=vec2(float(x),float(y));
+
+            float w=1.0-length(offs)/6.0;
+
+            col+=texture2D(
+                iVideo0,
+                uv+offs*px*radius
+            ).rgb*w;
+
+            total+=w;
+        }
+    }
+
+    return col/total;
+}
+
+void mainImage(out vec4 fragColor,in vec2 fragCoord){
+
+    vec2 uv=fragCoord/iResolution.xy;
+
+    // faixa focal horizontal
+    float focusLine=0.52;
+
+    // largura da área focada
+    float focusSize=0.08;
+
+    // distância da faixa
+    float d=abs(uv.y-focusLine);
+
+    // máscara do blur
+    float blurMask=smoothstep(
+        focusSize,
+        0.45,
+        d
+    );
+
+    // força do tilt shift
+    blurMask=pow(blurMask,1.7);
+
+    // imagem original
+    vec3 sharp=texture2D(iVideo0,uv).rgb;
+
+    // blur
+    vec3 blurred=blurVideo(
+        uv,
+        blurMask*1.0
+    );
+
+    // mistura
+    vec3 col=mix(
+        sharp,
+        blurred,
+        blurMask
+    );
+
+    // saturação estilo miniatura
+    float lum=dot(
+        col,
+        vec3(0.299,0.587,0.114)
+    );
+
+    col=mix(
+        vec3(lum),
+        col,
+        1.8
+    );
+
+    // contraste
+    col=(col-0.5)*1.25+0.5;
+
+    // cores toy-like
+    col.r*=1.08;
+    col.g*=1.05;
+    col.b*=0.92;
+
+    // sharpen no centro
+    vec2 px=1.0/iResolution.xy;
+
+    vec3 edge=
+        texture2D(iVideo0,uv).rgb*5.0-
+        texture2D(iVideo0,uv+vec2(px.x,0.0)).rgb-
+        texture2D(iVideo0,uv-vec2(px.x,0.0)).rgb-
+        texture2D(iVideo0,uv+vec2(0.0,px.y)).rgb-
+        texture2D(iVideo0,uv-vec2(0.0,px.y)).rgb;
+
+    float centerMask=
+        1.0-smoothstep(
+            0.02,
+            0.12,
+            d
+        );
+
+    col+=edge*0.10*centerMask;
+
+    // glow leve
+    float glow=max(
+        max(col.r,col.g),
+        col.b
+    );
+
+    col+=smoothstep(
+        0.7,
+        1.0,
+        glow
+    )*0.08;
+
+    // vinheta
+    vec2 v=uv*(1.0-uv.yx);
+
+    col*=pow(
+        v.x*v.y*18.0,
+        0.18
+    );
+
+    // granulado
+    float grain=fract(
+        sin(dot(
+            fragCoord+iTime,
+            vec2(12.9898,78.233)
+        ))*43758.5453
+    );
+
+    col+=(grain-0.5)*0.025;
+
+    // leve bloom fake
+    col=col/(col+vec3(0.7));
+
+    fragColor=vec4(col,1.0);
+}
+
+
+
+//Main
+
+precision highp float;
+
+void mainImage(out vec4 fragColor,in vec2 fragCoord){
+
+    vec2 uv=fragCoord/iResolution.xy;
+
+    fragColor=texture2D(iChannel0,uv);
+
+}
+`;
+
+const aa2=`//iChannel0
+
+void mainImage(out vec4 fragColor,in vec2 fragCoord){
+
+    vec2 uv=fragCoord/iResolution.xy;
+
+    vec4 prev=texture2D(iChannel0,uv);
+
+    // fade MUITO mais forte
+    prev.rgb*=0.92;
+
+    vec2 p=uv*2.0-1.0;
+
+    vec2 pos=vec2(
+        sin(iTime*1.7)*0.5,
+        cos(iTime*1.3)*0.5
+    );
+
+    float d=length(p-pos);
+
+    float circle=smoothstep(0.14,0.08,d);
+
+    vec3 color=vec3(
+        0.5+0.5*sin(iTime*2.0),
+        0.5+0.5*sin(iTime*3.0),
+        0.5+0.5*sin(iTime*4.0)
+    );
+
+    fragColor=vec4(
+        mix(prev.rgb,color,circle),
+        1.0
+    );
+}
+
+
+
+//Main
+
+void mainImage(out vec4 fragColor,in vec2 fragCoord){
+
+    vec2 uv=fragCoord/iResolution.xy;
+
+    fragColor=texture2D(iChannel0,uv);
+
+}`;
+
+
+const aa3 = `
+//Main
+
+precision highp float;
+
+float rand(vec2 p){
+    return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);
+}
+
+vec3 blur(sampler2D tex,vec2 uv,vec2 res,float amount){
+
+    vec2 px=1.0/res;
+
+    vec3 col=vec3(0.0);
+
+    col+=texture2D(tex,uv+px*vec2(-4.0,-4.0)*amount).rgb*0.05;
+    col+=texture2D(tex,uv+px*vec2(-2.0,-2.0)*amount).rgb*0.09;
+    col+=texture2D(tex,uv).rgb*0.42;
+    col+=texture2D(tex,uv+px*vec2(2.0,2.0)*amount).rgb*0.09;
+    col+=texture2D(tex,uv+px*vec2(4.0,4.0)*amount).rgb*0.05;
+
+    col+=texture2D(tex,uv+px*vec2(-6.0,0.0)*amount).rgb*0.07;
+    col+=texture2D(tex,uv+px*vec2(6.0,0.0)*amount).rgb*0.07;
+    col+=texture2D(tex,uv+px*vec2(0.0,-6.0)*amount).rgb*0.07;
+    col+=texture2D(tex,uv+px*vec2(0.0,6.0)*amount).rgb*0.07;
+
+    return col;
+}
+
+void mainImage(out vec4 fragColor,in vec2 fragCoord){
+
+    vec2 uv=fragCoord/iResolution.xy;
+
+    // posição da faixa focada
+    float focusY=0.52;
+
+    // largura da faixa focada
+    float focusSize=0.10;
+
+    // distância da faixa
+    float d=abs(uv.y-focusY);
+
+    // máscara do blur
+    float blurMask=smoothstep(focusSize,0.45,d);
+
+    blurMask=pow(blurMask,1.6);
+
+    // imagem original
+    vec3 sharp=texture2D(iVideo0,uv).rgb;
+
+    // blur progressivo
+    vec3 blurred=blur(iVideo0,uv,iResolution.xy,blurMask*18.0);
+
+    // mistura
+    vec3 col=mix(sharp,blurred,blurMask);
+
+    // saturação forte estilo miniatura
+    float luma=dot(col,vec3(0.299,0.587,0.114));
+
+    col=mix(vec3(luma),col,1.7);
+
+    // contraste
+    col=(col-0.5)*1.2+0.5;
+
+    // tons mais vivos
+    col.r*=1.08;
+    col.g*=1.03;
+    col.b*=0.95;
+
+    // sharpen apenas no centro
+    vec2 px=1.0/iResolution.xy;
+
+    vec3 edge=
+        texture2D(iVideo0,uv).rgb*5.0-
+        texture2D(iVideo0,uv+vec2(px.x,0.0)).rgb-
+        texture2D(iVideo0,uv-vec2(px.x,0.0)).rgb-
+        texture2D(iVideo0,uv+vec2(0.0,px.y)).rgb-
+        texture2D(iVideo0,uv-vec2(0.0,px.y)).rgb;
+
+    float centerMask=1.0-smoothstep(0.02,0.15,d);
+
+    col+=edge*0.12*centerMask;
+
+    // glow leve nas áreas claras
+    float glow=max(max(col.r,col.g),col.b);
+
+    col+=smoothstep(0.7,1.0,glow)*0.08;
+
+    // vinheta
+    vec2 v=uv*(1.0-uv.yx);
+
+    col*=pow(v.x*v.y*15.0,0.18);
+
+    // grain
+    float grain=rand(fragCoord+iTime)-0.5;
+
+    col+=grain*0.03;
+
+    // leve sensação fake de câmera macro
+    col*=1.08;
+
+    fragColor=vec4(col,1.0);
+}`;
+
+const aa4=`
+//iChannel0
+
+precision highp float;
+
+void mainImage(out vec4 fragColor,in vec2 fragCoord){
+
+    vec2 uv=fragCoord/iResolution.xy;
+
+    vec3 prev=texture2D(iChannel0,uv).rgb;
+
+    // fade real
+    prev=max(prev-0.01,0.0);
+
+    // aparece só no início
+    float intro=1.0-step(0.2,iTime);
+
+    float d=length(uv-0.5);
+
+    float circle=1.0-smoothstep(0.10,0.12,d);
+
+    vec3 add=vec3(1.0,0.0,0.0)*circle*intro;
+
+    fragColor=vec4(max(prev,add),1.0);
+}
+
+
+
+//Main
+
+precision highp float;
+
+void mainImage(out vec4 fragColor,in vec2 fragCoord){
+
+    vec2 uv=fragCoord/iResolution.xy;
+
+    fragColor=texture2D(iChannel0,uv);
+
+}`;
+
+
+    (async () => { //using assync function
+      var response = await shader.Shader(
+        'shaderText',
+        `attribute vec2 position;\nvoid main() {\ngl_Position = vec4(position, 0, 1);\n}`,
+        aa1,
+        { frameSkip: 0, alpha: true, glyph: true }
+      );
+
+      //shader.uniform('iChannel2','https://didisoftwares.ddns.net/10/noise.png');
+      
+    })();
+
+
+  </script>
+</body>
+
+</html>

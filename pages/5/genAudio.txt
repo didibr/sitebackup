@@ -1,0 +1,5 @@
+﻿WINEPREFIX=/www/wine wine "c:\\balcon\\balcon.exe" -n "IVONA 2 Vitória" -t "teste 123" -w "c:\output\output.wav"
+
+https://archive.org/details/tts-voice-collection
+https://archive.org/details/Neospeech
+https://tts.vampi.tech/

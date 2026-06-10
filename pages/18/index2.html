@@ -1,0 +1,109 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <title>Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div id="audioUnlock" class="unlock-overlay">
+    <div class="unlock-box glass3d">
+      <div class="unlock-title">🔊 Activate Audio</div>
+      <button id="unlockBtn" class="btn btn-primary w-100">Click to Start</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="layout">
+
+      <!-- PLAYER -->
+      <div class="player-container">
+        <div id="paa" class="player-bg">
+          <canvas id="bgShader"></canvas>
+        </div>
+
+        <div class="player-wrapper">
+          <div class="player-circle">
+            <canvas id="circularFX"></canvas>
+
+            <div class="circle-content">
+              <div class="center-disc">
+
+                <div id="musicName">
+                  <svg viewBox="0 0 200 200" class="text-circle">
+
+                    <defs>
+                      <path id="textPathCircle" d="M100,100 m-70,0 a70,70 0 1,1 140,0 a70,70 0 1,1 -140,0" />
+                    </defs>
+
+                    <!-- 🔥 FAIXA ESCURA -->
+                    <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="18" />
+
+                    <!-- TEXTO -->
+                    <text>
+                      <textPath id="textPath" href="#textPathCircle" startOffset="0%">
+                        no track
+                      </textPath>
+                    </text>
+
+                  </svg>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTROLES -->
+      <div class="controls-bar">
+        <button id="playBtn" onclick="fncPlay()">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+
+        <button id="stopBtn" onclick="fncStop()">
+          <svg viewBox="0 0 24 24">
+            <rect x="6" y="6" width="12" height="12" />
+          </svg>
+        </button>
+
+        <button id="nextBtn" onclick="fncNext()">
+          <svg viewBox="0 0 24 24">
+            <path d="M5 5v14l8-7z" /> <!-- primeiro triângulo -->
+            <path d="M13 5v14l8-7z" /> <!-- segundo triângulo -->
+            <rect x="21" y="5" width="2" height="14" /> <!-- barra -->
+          </svg>
+        </button>
+      </div>
+
+      <!-- PLAYLIST -->
+      <div class="playlist-panel glass3d">
+        <div class="select-wrapper mb-2">
+          <select id="playlistSelect" class="form-select" onchange="changePlaylist(this.value)"></select>
+        </div>
+        <div id="playlist" class="playlist"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <audio id="player"></audio>
+
+  <script src="./main.js"></script>
+  <script type="module">
+    import { ShaderPlay } from "https://didisoftwares.ddns.net/10/shaderplay.js";
+    const shader = ShaderPlay.create();
+    startShader(shader);
+  </script>
+
+</body>
+
+</html>

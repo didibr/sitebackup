@@ -1,0 +1,290 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <title>Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @font-face {
+      font-family: 'Roboto';
+      src: url('./roboto-black.ttf') format('truetype');
+      font-weight: 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: "Inter", sans-serif;
+      background-color: black;
+    }
+
+    .fontStyle {
+      font-size: 8vw;
+      /*font-family: 'Roboto', sans-serif;*/
+      text-align: center;
+    }
+
+    .code {
+      color: #ccc;
+      font-family: monospace;
+    }
+
+    .fn {
+      color: #4FC3F7;
+    }
+
+    .var {
+      color: #AED581;
+    }
+
+    .desc {
+      color: #888;
+    }
+
+    .opt {
+      color: #FFB74D;
+    }
+
+    p {
+      margin: 2px 0;
+    }
+
+    .editors {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    .editorBox {
+      flex: 1;
+      /* ocupa espaço igual */
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editorBox label {
+      color: #aaa;
+      font-family: monospace;
+      margin-bottom: 4px;
+    }
+
+    .editorBox textarea {
+      flex: 1;
+      resize: none;
+      background: #111;
+      color: #0f0;
+      border: 1px solid #333;
+      padding: 8px;
+      font-family: monospace;
+    }
+
+    .runBox {
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .runBox button {
+      padding: 10px 12px;
+      background: aqua;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="code hideoniframe" style="margin-left: 6px;">
+    <p>
+      <span class="opt">canvas</span>
+      <span class="fn">Shaderplay.Shader</span>(
+      <span class="var">element, vertexCode, fragmentCode, options</span>)
+      <span class="desc">//put shader on background element</span>
+    </p>
+
+    <p>
+      <span class="opt">svg or array</span>
+      <span class="fn">Shaderplay.ShaderText</span>(
+      <span class="var">element, vertexCode, fragmentCode, options</span>)
+      <span class="desc">//put shader on background text, options.glyph return array of letters</span>
+    </p>
+
+    <p>
+      <span class="opt">options</span> = {
+      <span class="var">frameSkip</span>: 0,
+      <span class="var">precision</span>: "highp",
+      <span class="var">alpha</span>: false ,
+      <span class="var">glyph</span>: false }
+      <span class="desc">//default options</span>
+    </p>
+
+    <p>
+      <span class="opt">array</span>
+      <span class="fn">convertToGlyphs</span>()
+      <span class="desc">//convert Shadertext from svg array of text to array of paths, support fonts (TTF,WOF,SVG)</span>
+    </p>
+
+    <p>
+      <span class="opt">value</span>
+      <span class="fn">ShaderPlay.uniform</span>(
+      <span class="var">name, value</span>)
+      <span class="desc">//change value on shader uniforms, only get on empty value</span>
+    </p>
+
+    <p>     
+     <span class="fn">createAudioFFT</span>(
+     <span class="var">input, ctx, index</span>)
+     <span class="desc">//create sampler2D iAudioX, X is index, input can be Audio element or (audioNode,mediaSource) </span>
+     <br><span class="desc">//have native function to get frequency on shader: float getfrequency(float x, sampler2D iAudio) </span>
+    </p>
+
+    <p>
+      <span class="fn">setResolution</span>(
+      <span class="var">width, height</span>)
+      <span class="desc">//set resolution size off all Buffers and paint area</span>
+    </p>
+
+      
+    <p>
+      <span class="fn">ShaderPlay.showEditor</span>() and
+      <span class="fn">ShaderPlay.closeEditor</span>()
+      <span class="desc">//edit and debug shaders</span>
+    </p>
+
+    <p>
+      <span class="fn">ShaderPlay.update</span>()
+      <span class="desc">//update shader paint area and calc</span>
+    </p>
+    <p>
+      <span class="fn">ShaderPlay.destroy</span>()
+      <span class="desc">//remove and clear</span>
+    </p>
+
+  </div>
+  <input type="button" onclick="ShaderPlayEditor.show();" value="Editor"
+    style="padding: 6px; margin: 5px; background-color: aqua;">
+
+  <h1 id="shaderText" class="fontStyle">
+    SAMPLE CODE
+  </h1>
+
+  <div class="editors">
+    <div class="editorBox">
+      <label>VERTEX</label>
+      <textarea id="vert">attribute vec2 position;\nvoid main() {\ngl_Position = vec4(position, 0, 1);\n}</textarea>
+    </div>
+
+    <div class="editorBox">
+      <label>FRAGMENT</label>
+      <textarea id="frag">//Main
+      void mainImage(out vec4 o,in vec2 fc){
+      vec2 uv=fc/iResolution.xy;
+      float y=uv.y;
+      vec3 c;
+      if(y<0.2)c=vec3(1,0,0);
+      else if(y<0.4)c=vec3(0,1,0);
+      else if(y<0.6)c=vec3(0,0,1);
+      else if(y<0.8)c=vec3(1,1,0);
+      else c=vec3(1,0,1);
+      o=vec4(c,1.0);
+      }</textarea>
+    </div>
+
+    <div class="runBox">
+      <button onclick="runShader()">RUN</button>
+    </div>
+  </div>
+
+  
+  <script type="module">
+     import { ShaderPlay } from "./shaderplay.js";
+     const shader=ShaderPlay.create();
+     
+
+    //shader.showEditor();
+    window.runShader=()=> {
+      //ShaderPlay.destroy();
+      shader.ShaderText(
+        'shaderText',
+        document.getElementById('vert').value,
+        document.getElementById('frag').value,
+        { frameSkip: 0, alpha: true }
+      );
+      shader.update();
+    }
+
+    const fire = `//iChannel0
+        float rand(vec2 c){return fract(sin(dot(c,vec2(12.9898,78.233)))*43758.5453);}
+        float hermite(float t){return t*t*(3.-2.*t);}
+        float noise(vec2 c,float f){vec2 v=c*f,i=floor(v),fr=fract(v);float a=rand(i),b=rand(i+vec2(1,0)),d=rand(i+vec2(1,1)),cc=rand(i+vec2(0,1));vec2 u=vec2(hermite(fr.x),hermite(fr.y));return mix(mix(a,b,u.x),mix(cc,d,u.x),u.y);}
+        float pnoise(vec2 c,float f,float p){float v=0.,a=1.,s=0.;for(int i=0;i<5;i++){s+=a;v+=noise(c,f)*a;f*=2.;a*=p;}return v/s;}
+
+        void mainImage(out vec4 o,in vec2 fc){
+        vec2 r=iResolution.xy,uv=fc/r;float asp=r.x/r.y;
+        vec2 ua=vec2(uv.x*asp,uv.y),pos=fc/r.x;pos.x*=asp;pos.y-=iTime*.3125;
+        float g=(1.-ua.y)*.5,gs=.2,n=pnoise(pos,8.,.5);
+        float f=smoothstep(0.,n,g),d=smoothstep(0.,n,g-gs),m=smoothstep(0.,n,g-gs*2.);
+        vec4 bc=vec4(1.,.65,.1,1.),dc=vec4(1.,0.,.15,1.),mc=mix(bc,dc,.5);
+        vec4 col=mix(bc,dc,f-d);col=mix(col,mc,d-m);
+        o=vec4(col.rgb,f);
+        }
+
+        //Main
+        void mainImage(out vec4 o,in vec2 fc){
+        o=texture2D(iChannel0,fc/iResolution.xy);
+        //o=vec4(1.0,0.0,0.1,1.0);
+        }`;
+
+    const test = `//Main
+      void mainImage(out vec4 o,in vec2 fc){
+      vec2 uv=fc/iResolution.xy;
+      float y=uv.y;
+      vec3 c;
+      if(y<0.2)c=vec3(1,0,0);
+      else if(y<0.4)c=vec3(0,1,0);
+      else if(y<0.6)c=vec3(0,0,1);
+      else if(y<0.8)c=vec3(1,1,0);
+      else c=vec3(1,0,1);
+      o=vec4(c,1.0);
+      }`;
+
+
+  
+
+
+    (async () => { //using assync function
+      var response = await shader.ShaderText(
+        'shaderText',
+        `attribute vec2 position;\nvoid main() {\ngl_Position = vec4(position, 0, 1);\n}`,
+        fire,
+        { frameSkip: 0, alpha: true, glyph: true }
+      );
+      
+      //new funcionality test - convert to [svg text->path ] with openType 
+      // Works only if used SetShaderText with [options.glyph=true] and font used in CSS is ttf or woff
+      //response = await shader.convertToGlyphs(); //return array of glyphs 
+      
+      //check onclick test in first letter if as glyph or in text point
+      console.log(response);      
+      var pathortext=Array.isArray(response) ? response[0] : response;
+      pathortext.onclick = (e) => {
+        const tpx = e.clientX - pathortext.getBoundingClientRect().left;
+        const tpy = e.clientY - pathortext.getBoundingClientRect().top;
+        console.log('clicked',tpx,tpy);
+      };      
+    })();
+    
+
+    (() => { //just to put in my cards portfolio
+      if (location.hash === "#iframe") {      
+        const hide = () => document.querySelectorAll('.hideoniframe').forEach(el => el.style.setProperty('display', 'none', 'important'));
+        document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", hide) : hide();
+      }
+    })();
+  </script>
+</body>
+
+</html>
