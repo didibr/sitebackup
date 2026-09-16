@@ -1,0 +1,82 @@
+//join
+[ Bonn ], [ Aachen ] -- 1 --> [ Berlin ]
+
+//split
+[ Bonn ] -- 1 --> [ Berlin ], [ Aachen ]
+
+//comma
+[ Potsdam ], [ Mannheim ] --> { end: back,0; }
+[ Weimar ] --> { start: front,0; } [ Finsterwalde ], [ Aachen ]
+
+//mixed chains
+[ A ] { size: 2,2; }
+-> [ B ] { rows: 2; }
+-> [ C ] { columns: 3; } [ A ] -> [ B ]
+-> [ C ]
+-> [ D ] [ D ] -> [ C ]
+[ B ] -> [ C ] [ A ] -> [ F ]
+[ A ] -> [ G ]
+
+//record
+[ A | B | C ]
+
+//record connect
+[ A | B | C ]
+[ 1 ] -> [ ABC.2 ]
+[ ABC.1 ] --> [ out ]
+
+//group fill
+(German Cities[ Berlin ] -> [ Potsdam ]) { fill: red; }
+(Brazil Cities [SP] -> [Potsdam]){fill:gray}
+
+//edge color
+edge { color: blue; }
+node { color: green; }
+[ alamo ] -> [ se ] 
+
+//graph label
+graph { align: left; label: My Graph; }
+node {align: left;}
+( Nodes:
+  [ Right\nAligned ] { align: right; }
+  -- label\n text --> { align: left; }
+  [ Left\naligned ]
+)
+
+//collor and fills
+[ Crimson ] { shape: circle; background: crimson; } -- Aqua Marine --> { background: #7fffd4; }
+[ Misty Rose ] { background: white; fill: rgb(255,228,221); shape: ellipse; }
+
+//border
+[ Normal ] --> [ Bold ] { border: bold; } --> [ Broad ] { border: broad; } --> [ Wide ] { border: wide; } --> [ Bold-Dash ] { border: bold-dash; }
+
+//border color
+node { border: black bold; }
+[ Black ] --> [ Red ] { bordercolor: red; } --> [ Green ] { bordercolor: green; }
+
+//border style
+[ Dotted ]{ border: dotted; } --> [ Dashed ] { border: dashed; } --> [ broad ] { border: broad; }
+
+//label color
+[ Lime ] { color: limegreen; } -- label --> { color: blue; labelcolor: red; }
+[ Dark Orange ] { color: rgb(255,100,10); }
+
+//colorscheme
+[ 1 ] { fill: 1; } -> [ 3 ] { fill: 3; } -> [ 4 ] { fill: 4; } -> [ 5 ] { fill: 5; } -> [ 6 ] { fill: 6; } -> [ 7 ] { fill: 7; } -> [ 8 ] { fill: 8; }
+
+//minlen and origin
+[ Bonn ] -- longer --> { minlen: 3; } [ Berlin ]
+[ Bonn ] --> [ Potsdam ] { origin: Bonn; offset: 2,2; }
+
+//north ports
+[ Bonn ] -- NORTH --> { start: north; end: north; } [ Berlin ]
+
+//polygon
+[ A ] --> 
+[ B ] { shape: ellipse; } -->
+[ C ] { shape: diamond; } -->
+[ D ] { shape: square; } -->
+[ E ] { shape: circle; } -->
+[ F ] { shape: triangle; } -->
+[ G ] { shape: star; } -->
+[ H ] { shape: none; }
