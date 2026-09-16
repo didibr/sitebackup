@@ -521,11 +521,13 @@ function httpsRequests(req, res) {
 
 
   // Verificação da whitelist
+  if(!url.startsWith('/jane/')){ //############ lIBERA
   if (!isWhitelisted(url, req, res)) {
     console.log('BlockList', url);
     show404(res);
     return;
   }
+ }
 
   const paa = path.extname(url);
 

@@ -18,7 +18,7 @@
       margin: 0;
       height: 100vh;
       font-family: "Inter", sans-serif;
-      background-color: black;
+      background-color: rgb(226, 21, 21);
     }
 
     .fontStyle {
@@ -28,7 +28,7 @@
       width: 640px;
       height: 360px;
       display: block;
-      border: 1px solid white;
+      border: 0px;
     }
   </style>
 </head>
@@ -37,396 +37,266 @@
   <input type="button" onclick="ShaderPlayEditor.show();" value="Editor"
     style="padding: 6px; margin: 5px; background-color: aqua;">
 
-    <p>aa</p>
-    <p>aa</p>
-    
+  <p>aa</p>
+  <p>aa</p>
+
   <div id="shaderText" class="fontStyle">
   </div>
 
-  
+
 
 
   <script type="module">
-    import { ShaderPlay } from "https://didisoftwares.ddns.net/10/shaderplay1.js";
+    //https://www.shadertoy.com/view/ssByDV
+    //https://www.shadertoy.com/view/Wtj3Wm
+    import { ShaderPlay } from "https://didisoftwares.ddns.net/10/shaderplay6.js";
     const shader = ShaderPlay.create();
-    window.SS=shader;
-    shader.setResolution(320,180);
-    
-    //shader.createImageChannel("https://cdn.jsdelivr.net/gh/didibr/sitebackup/pages/10/flor.jpg",2);
-    const imgx="https://cdn.jsdelivr.net/gh/didibr/sitebackup/pages/10/flor.jpg";
-    shader.createVideoChannel("https://didisoftwares.ddns.net/10/videos/sp.mp4",0);
+    //window.SS = shader;
 
-const aa0=`
-//iChannel2 = ${imgx}
-//Main
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-    vec2 uv = fragCoord / iResolution.xy;
-    fragColor = texture2D(iChannel2, uv);
-}`
+    shader.setResolution(300, 300);
 
-    const aa1 = `
-//iChannel0
-precision highp float;
 
-vec3 blurVideo(vec2 uv,float radius){
 
-    vec2 px=1.0/iResolution.xy;
-
-    vec3 col=vec3(0.0);
-
-    float total=0.0;
-
-    for(int x=-4;x<=4;x++){
-        for(int y=-4;y<=4;y++){
-
-            vec2 offs=vec2(float(x),float(y));
-
-            float w=1.0-length(offs)/6.0;
-
-            col+=texture2D(
-                iVideo0,
-                uv+offs*px*radius
-            ).rgb*w;
-
-            total+=w;
+    const aa0 = `
+#version 300 es
+//Common
+vec4 Saturate(vec4 pixel, float adjustment) {
+    vec3 intensity = vec3(dot(pixel.rgb, vec3(0.2126, 0.7152, 0.0722)));
+    return vec4(mix(intensity, pixel.rgb, adjustment), 1.0);
+}
+float GoldNoise(in vec2 xy, in float seed) {
+    xy += 1.0; seed += 1000.0;
+    return fract(tan(distance(xy * 1.61803398874989484820459, xy) * seed) * xy.x);
+}
+float GetColumnWidth(const in float x, const in float layer, const in vec2 minMaxColumnWidth) {
+    return mix(minMaxColumnWidth.x, minMaxColumnWidth.y, GoldNoise(vec2(layer, layer), x));
+}
+float GetRowHeight(const in float y,const float layer,const in vec2 minMaxRowHeight) {
+    return mix(minMaxRowHeight.x, minMaxRowHeight.y, GoldNoise(vec2(layer, layer), y + 99.0));
+}
+vec3 GetColumnByUV(const in vec2 uv, const in float layer,const in vec2 minMaxColumnWidth) {
+    float column = 0.0;
+    float widthSum = 0.0;
+    for (int i = 0; i < 256; i++) {
+        float colWidth = GetColumnWidth(column, layer, minMaxColumnWidth);
+        if (uv.x >= widthSum && uv.x < widthSum + colWidth) return vec3(widthSum, widthSum + colWidth, column);
+        widthSum += colWidth;
+        column++;
+    }
+    return vec3(0.0);
+}
+vec3 GetRowByUV(const in vec2 uv,
+    const in float layer,
+    const in vec2 minMaxRowHeight) {
+    float row = 0.0;
+    float heightSum = 0.0;
+    for (int i = 0; i < 256; i++) {
+        float rowHeight = GetRowHeight(row, layer, minMaxRowHeight);
+        if (uv.y >= heightSum && uv.y < heightSum + rowHeight) return vec3(heightSum, heightSum + rowHeight, row);
+        heightSum += rowHeight;
+        row++;
+    }
+    return vec3(0.0);
+}
+vec4 GetRect(const in vec2 uv, const in float layer,const in vec2 minMaxColumnWidth,
+    const in vec2 minMaxRowHeight) {
+    vec3 columnInfo = GetColumnByUV(uv, layer, minMaxColumnWidth);
+    vec3 rowInfo = GetRowByUV(uv, layer, minMaxRowHeight);
+    return vec4(columnInfo.x, columnInfo.y, rowInfo.x, rowInfo.y);
+}
+vec4 RenderSquares(const in vec2 uv, const in float startLayerIndex, const in float endLayerIndex,
+    const in vec2 minMaxColumnWidth,const in vec2 minMaxRowHeight,const in float maxHorizontalOffset) {
+    float lum = 0.0;
+    for (float i = startLayerIndex; i < endLayerIndex; i++) {
+        vec4 rect = GetRect(uv, i, minMaxColumnWidth, minMaxRowHeight);
+        bool renderRect = GoldNoise(vec2(rect.x, rect.z), i) > 0.95;
+        if (renderRect) {
+            float offsetSign = GoldNoise(vec2(rect.x, rect.z), rect.x * rect.x) > 0.5 ? 1.0 : -1.0;
+            float offset = GoldNoise(vec2(rect.x, rect.z), rect.x * rect.z) * maxHorizontalOffset * offsetSign;
+            lum = uv.x + offset;
+            break;
+        } else {
+            lum = uv.x;
         }
     }
-
-    return col/total;
+    return vec4(lum, lum, lum, 1.0);
 }
 
-void mainImage(out vec4 fragColor,in vec2 fragCoord){
+//iChannel2
+uniform int swap;
+uniform float startTime;
+uniform int transitionType;
+uniform float duration;
 
-    vec2 uv=fragCoord/iResolution.xy;
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
 
-    // faixa focal horizontal
-    float focusLine=0.52;
+float getProgress() {
+    float t = iTime - (startTime * 0.001);
+    float p = clamp(t / duration, 0.0, 1.0);
+    return p * p * (3.0 - 2.0 * p);
+}
 
-    // largura da área focada
-    float focusSize=0.08;
+// ================= BUFFER =================
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord.xy / iResolution.xy;
+    vec3 target = (swap == 0) ? texture(iChannel0, uv).rgb : texture(iChannel1, uv).rgb;
+    vec3 current = (swap == 0) ? texture(iChannel1, uv).rgb : texture(iChannel0, uv).rgb;
+    float progress = getProgress();
+    vec3 col;
+    // ================= TRANSITION TYPES =================
+    // default
+    if (transitionType == 0) {
+        col = target;
+    }
 
-    // distância da faixa
-    float d=abs(uv.y-focusLine);
-
-    // máscara do blur
-    float blurMask=smoothstep(
-        focusSize,
-        0.45,
-        d
-    );
-
-    // força do tilt shift
-    blurMask=pow(blurMask,1.7);
-
-    // imagem original
-    vec3 sharp=texture2D(iVideo0,uv).rgb;
-
-    // blur
-    vec3 blurred=blurVideo(
-        uv,
-        blurMask*1.0
-    );
-
-    // mistura
-    vec3 col=mix(
-        sharp,
-        blurred,
-        blurMask
-    );
-
-    // saturação estilo miniatura
-    float lum=dot(
-        col,
-        vec3(0.299,0.587,0.114)
-    );
-
-    col=mix(
-        vec3(lum),
-        col,
-        1.8
-    );
-
-    // contraste
-    col=(col-0.5)*1.25+0.5;
-
-    // cores toy-like
-    col.r*=1.08;
-    col.g*=1.05;
-    col.b*=0.92;
-
-    // sharpen no centro
-    vec2 px=1.0/iResolution.xy;
-
-    vec3 edge=
-        texture2D(iVideo0,uv).rgb*5.0-
-        texture2D(iVideo0,uv+vec2(px.x,0.0)).rgb-
-        texture2D(iVideo0,uv-vec2(px.x,0.0)).rgb-
-        texture2D(iVideo0,uv+vec2(0.0,px.y)).rgb-
-        texture2D(iVideo0,uv-vec2(0.0,px.y)).rgb;
-
-    float centerMask=
-        1.0-smoothstep(
-            0.02,
-            0.12,
-            d
+    //1 - cyberpunk
+    else if (transitionType == 1) {
+        float t = mix(-0.25, 1.25, progress);
+        vec4 mask = RenderSquares( uv, 0.0, 20.0,
+            vec2(0.01, 0.2),vec2(0.01, 0.1),0.1
         );
 
-    col+=edge*0.10*centerMask;
+        vec4 accentMask = RenderSquares(uv,20.0,40.0,
+            vec2(0.01, 0.2),vec2(0.001, 0.1),0.1
+        );
+        vec4 outColor;
+        if (mask.r > t) {
+            outColor = vec4(current, 1.0);
+            if (t > accentMask.r - 0.2) {
+                outColor = Saturate(outColor, 2.0);
+                outColor *= 0.4;
+            }
+        } else {
+            outColor = vec4(target, 1.0);
+        }
+        col = outColor.rgb;
+    }
 
-    // glow leve
-    float glow=max(
-        max(col.r,col.g),
-        col.b
-    );
-
-    col+=smoothstep(
-        0.7,
-        1.0,
-        glow
-    )*0.08;
-
-    // vinheta
-    vec2 v=uv*(1.0-uv.yx);
-
-    col*=pow(
-        v.x*v.y*18.0,
-        0.18
-    );
-
-    // granulado
-    float grain=fract(
-        sin(dot(
-            fragCoord+iTime,
-            vec2(12.9898,78.233)
-        ))*43758.5453
-    );
-
-    col+=(grain-0.5)*0.025;
-
-    // leve bloom fake
-    col=col/(col+vec3(0.7));
-
-    fragColor=vec4(col,1.0);
+    // 2 - drop water
+    else if (transitionType == 2) {
+        if (progress >= 0.999) {
+            col = target;
+        } else {
+            float freq = 8.0; float fade = 4.0;
+            float displacement = 0.2;
+            vec2 R = iResolution.xy;
+            vec2 U = ((2.0 * fragCoord.xy) - R) / min(R.x, R.y);
+            float D = length(U);
+            float pixel_time = max(0.0, (progress * fade) - D);
+            float wave_height = (cos(pixel_time * freq) + 1.0) * 0.5;
+            float wave_scale = (1.0 - min(1.0, pixel_time / fade));
+            float frac = wave_height * wave_scale;
+            vec2 dir = (D > 0.0001) ? (U / D) : vec2(0.0);
+            vec2 tc = uv + dir * (-((sin(pixel_time * freq) / fade) * wave_scale) * displacement);
+            vec3 a = current;
+            vec3 b;
+            if (swap == 0)
+                b = texture(iChannel0, tc).rgb;
+            else
+                b = texture(iChannel1, tc).rgb;
+            col = mix(a, b, clamp(1.0 - frac + progress, 0.0, 1.0));
+        }
+    }
+        
+    //3 - zoom blur
+    else if (transitionType == 3) {
+        vec2 center = vec2(0.5);
+        vec2 toCenter = center - uv;
+        float strength = sin(progress * 3.14159) * 0.3;
+        vec3 color = vec3(0.0);
+        float total = 0.0;
+        for (float t = 0.0; t <= 10.0; t++) {
+            float percent = t / 10.0;
+            float weight = percent * (1.0 - percent);
+            vec2 sampleUV = uv + toCenter * percent * strength;
+            vec3 a = current;
+            vec3 b = target;
+            color += mix(a, b, progress) * weight;
+            total += weight;
+        }
+        col = color / total;
+    }                
+    fragColor = vec4(col, 1.0);
 }
-
-
-
+// ================= FINAL =================
 //Main
-
-precision highp float;
-
-void mainImage(out vec4 fragColor,in vec2 fragCoord){
-
-    vec2 uv=fragCoord/iResolution.xy;
-
-    fragColor=texture2D(iChannel0,uv);
-
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord.xy / iResolution.xy;
+    fragColor = texture(iChannel2, uv);
 }
-`;
+`
 
-const aa2=`//iChannel0
 
-void mainImage(out vec4 fragColor,in vec2 fragCoord){
+    
+    const vertex2 = `in vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0);}`;
 
-    vec2 uv=fragCoord/iResolution.xy;
-
-    vec4 prev=texture2D(iChannel0,uv);
-
-    // fade MUITO mais forte
-    prev.rgb*=0.92;
-
-    vec2 p=uv*2.0-1.0;
-
-    vec2 pos=vec2(
-        sin(iTime*1.7)*0.5,
-        cos(iTime*1.3)*0.5
-    );
-
-    float d=length(p-pos);
-
-    float circle=smoothstep(0.14,0.08,d);
-
-    vec3 color=vec3(
-        0.5+0.5*sin(iTime*2.0),
-        0.5+0.5*sin(iTime*3.0),
-        0.5+0.5*sin(iTime*4.0)
-    );
-
-    fragColor=vec4(
-        mix(prev.rgb,color,circle),
-        1.0
-    );
-}
-
-
-
-//Main
-
-void mainImage(out vec4 fragColor,in vec2 fragCoord){
-
-    vec2 uv=fragCoord/iResolution.xy;
-
-    fragColor=texture2D(iChannel0,uv);
-
-}`;
-
-
-const aa3 = `
-//Main
-
-precision highp float;
-
-float rand(vec2 p){
-    return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);
-}
-
-vec3 blur(sampler2D tex,vec2 uv,vec2 res,float amount){
-
-    vec2 px=1.0/res;
-
-    vec3 col=vec3(0.0);
-
-    col+=texture2D(tex,uv+px*vec2(-4.0,-4.0)*amount).rgb*0.05;
-    col+=texture2D(tex,uv+px*vec2(-2.0,-2.0)*amount).rgb*0.09;
-    col+=texture2D(tex,uv).rgb*0.42;
-    col+=texture2D(tex,uv+px*vec2(2.0,2.0)*amount).rgb*0.09;
-    col+=texture2D(tex,uv+px*vec2(4.0,4.0)*amount).rgb*0.05;
-
-    col+=texture2D(tex,uv+px*vec2(-6.0,0.0)*amount).rgb*0.07;
-    col+=texture2D(tex,uv+px*vec2(6.0,0.0)*amount).rgb*0.07;
-    col+=texture2D(tex,uv+px*vec2(0.0,-6.0)*amount).rgb*0.07;
-    col+=texture2D(tex,uv+px*vec2(0.0,6.0)*amount).rgb*0.07;
-
-    return col;
-}
-
-void mainImage(out vec4 fragColor,in vec2 fragCoord){
-
-    vec2 uv=fragCoord/iResolution.xy;
-
-    // posição da faixa focada
-    float focusY=0.52;
-
-    // largura da faixa focada
-    float focusSize=0.10;
-
-    // distância da faixa
-    float d=abs(uv.y-focusY);
-
-    // máscara do blur
-    float blurMask=smoothstep(focusSize,0.45,d);
-
-    blurMask=pow(blurMask,1.6);
-
-    // imagem original
-    vec3 sharp=texture2D(iVideo0,uv).rgb;
-
-    // blur progressivo
-    vec3 blurred=blur(iVideo0,uv,iResolution.xy,blurMask*18.0);
-
-    // mistura
-    vec3 col=mix(sharp,blurred,blurMask);
-
-    // saturação forte estilo miniatura
-    float luma=dot(col,vec3(0.299,0.587,0.114));
-
-    col=mix(vec3(luma),col,1.7);
-
-    // contraste
-    col=(col-0.5)*1.2+0.5;
-
-    // tons mais vivos
-    col.r*=1.08;
-    col.g*=1.03;
-    col.b*=0.95;
-
-    // sharpen apenas no centro
-    vec2 px=1.0/iResolution.xy;
-
-    vec3 edge=
-        texture2D(iVideo0,uv).rgb*5.0-
-        texture2D(iVideo0,uv+vec2(px.x,0.0)).rgb-
-        texture2D(iVideo0,uv-vec2(px.x,0.0)).rgb-
-        texture2D(iVideo0,uv+vec2(0.0,px.y)).rgb-
-        texture2D(iVideo0,uv-vec2(0.0,px.y)).rgb;
-
-    float centerMask=1.0-smoothstep(0.02,0.15,d);
-
-    col+=edge*0.12*centerMask;
-
-    // glow leve nas áreas claras
-    float glow=max(max(col.r,col.g),col.b);
-
-    col+=smoothstep(0.7,1.0,glow)*0.08;
-
-    // vinheta
-    vec2 v=uv*(1.0-uv.yx);
-
-    col*=pow(v.x*v.y*15.0,0.18);
-
-    // grain
-    float grain=rand(fragCoord+iTime)-0.5;
-
-    col+=grain*0.03;
-
-    // leve sensação fake de câmera macro
-    col*=1.08;
-
-    fragColor=vec4(col,1.0);
-}`;
-
-const aa4=`
-//iChannel0
-
-precision highp float;
-
-void mainImage(out vec4 fragColor,in vec2 fragCoord){
-
-    vec2 uv=fragCoord/iResolution.xy;
-
-    vec3 prev=texture2D(iChannel0,uv).rgb;
-
-    // fade real
-    prev=max(prev-0.01,0.0);
-
-    // aparece só no início
-    float intro=1.0-step(0.2,iTime);
-
-    float d=length(uv-0.5);
-
-    float circle=1.0-smoothstep(0.10,0.12,d);
-
-    vec3 add=vec3(1.0,0.0,0.0)*circle*intro;
-
-    fragColor=vec4(max(prev,add),1.0);
-}
-
-
-
-//Main
-
-precision highp float;
-
-void mainImage(out vec4 fragColor,in vec2 fragCoord){
-
-    vec2 uv=fragCoord/iResolution.xy;
-
-    fragColor=texture2D(iChannel0,uv);
-
-}`;
-
-
-    (async () => { //using assync function
-      var response = await shader.Shader(
-        'shaderText',
-        `attribute vec2 position;\nvoid main() {\ngl_Position = vec4(position, 0, 1);\n}`,
-        aa1,
-        { frameSkip: 0, alpha: true, glyph: true }
+    (async () => { //using assync function        
+      var response = await shader.Shader('shaderText', vertex2, aa0
+        //{ texture:{minFilter:"NEAREST",magFilter:"NEAREST"} }
       );
 
-      //shader.uniform('iChannel2','https://didisoftwares.ddns.net/10/noise.png');
-      
+      console.log('compiled');
+      window.VX = shader;
+
+      await shader.uniform('iChannel0', 'https://didisoftwares.ddns.net/10/images/leo.png');
+      await shader.uniform('iChannel1', 'https://didisoftwares.ddns.net/10/images/flor.jpg');
+
+
+
+// inicial
+shader.uniform("duration", 1.5);
+shader.uniform("swap", 0,'int');
+shader.uniform("transitionType", 0,'int');
+shader.uniform("startTime", performance.now());
+
+/*setTimeout(() => {
+  shader.uniform("swap", 0,'int'); 
+  shader.uniform("transitionType", 3,'int'); 
+  shader.uniform("startTime", performance.now());
+  //VX.uniform("swap", 1,'int'); VX.uniform("transitionType", 0,'int'); VX.uniform("startTime", performance.now());
+}, 3000);*/
+
+setInterval(() => { changeImage(100,100);}, 4000);
+
     })();
+
+    const images=[
+    "1503614472-8c93d56e92ce",
+    "1528184039930-bd03972bd974",
+    "1498429089284-41f8cf3ffd39",
+    "1465189684280-6a8fa9b19a7a",
+    "1433838552652-f9a46b332c40",
+    "1523712999610-f77fbcfc3843",
+    "1773176647951-d8f618dee942",
+    "1506744038136-46273834b3fb",
+    "1580917388462-2e09d69dff51",
+    "1470252649378-9c29740c9fa8"]
+
+let current = 0; // visible
+let next = 1;    // next visible
+let index = 1;
+let swap = 1;
+
+async function changeImage(w,h) {  
+  const usplash = "https://images.unsplash.com/photo-";
+  // transition
+  console.log(current,swap);
+  shader.uniform("swap", swap, "int");
+  shader.uniform("transitionType", 3, "int");
+  shader.uniform("startTime", performance.now());
+  // next image  
+  index = (index + 1) % images.length;
+  const url = `${usplash}${images[index]}?auto=format&fit=crop&w=${w}&h=${h}`;    
+  //change not visible buffer
+  shader.uniform(`iChannel${next}`, url);  
+  setTimeout(() => {
+    current = next;
+    next = 1 - next;
+    swap = 1 - swap;
+  }, 1500); // igual duration
+}
 
 
   </script>

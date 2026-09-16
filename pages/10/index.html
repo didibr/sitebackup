@@ -124,7 +124,8 @@
     <p>
       <span class="opt">array</span>
       <span class="fn">convertToGlyphs</span>()
-      <span class="desc">//convert Shadertext from svg array of text to array of paths, support fonts (TTF,WOF,SVG)</span>
+      <span class="desc">//convert Shadertext from svg array of text to array of paths, support fonts
+        (TTF,WOF,SVG)</span>
     </p>
 
     <p>
@@ -134,11 +135,13 @@
       <span class="desc">//change value on shader uniforms, only get on empty value</span>
     </p>
 
-    <p>     
-     <span class="fn">createAudioFFT</span>(
-     <span class="var">input, ctx, index</span>)
-     <span class="desc">//create sampler2D iAudioX, X is index, input can be Audio element or (audioNode,mediaSource) </span>
-     <br><span class="desc">//have native function to get frequency on shader: float getfrequency(float x, sampler2D iAudio) </span>
+    <p>
+      <span class="fn">createAudioFFT</span>(
+      <span class="var">input, ctx, index</span>)
+      <span class="desc">//create sampler2D iAudioX, X is index, input can be Audio element or (audioNode,mediaSource)
+      </span>
+      <br><span class="desc">//have native function to get frequency on shader: float getfrequency(float x, sampler2D
+        iAudio) </span>
     </p>
 
     <p>
@@ -147,7 +150,7 @@
       <span class="desc">//set resolution size off all Buffers and paint area</span>
     </p>
 
-      
+
     <p>
       <span class="fn">ShaderPlay.showEditor</span>() and
       <span class="fn">ShaderPlay.closeEditor</span>()
@@ -179,7 +182,9 @@
 
     <div class="editorBox">
       <label>FRAGMENT</label>
-      <textarea id="frag">//Main
+      <textarea id="frag">
+      #version 300 es
+      //Main
       void mainImage(out vec4 o,in vec2 fc){
       vec2 uv=fc/iResolution.xy;
       float y=uv.y;
@@ -198,45 +203,40 @@
     </div>
   </div>
 
-  
+
   <script type="module">
-     import { ShaderPlay } from "./shaderplay.js";
-     const shader=ShaderPlay.create();
-     
+    import { ShaderPlay } from "./shaderplay.js";
+    const shader = ShaderPlay.create();
+
 
     //shader.showEditor();
-    window.runShader=()=> {
-      //ShaderPlay.destroy();
-      shader.ShaderText(
-        'shaderText',
+    window.runShader = () => {
+      //shader.destroy();
+      shader.setShader( //update current shader
         document.getElementById('vert').value,
-        document.getElementById('frag').value,
-        { frameSkip: 0, alpha: true }
+        document.getElementById('frag').value
       );
       shader.update();
     }
 
-    const fire = `//iChannel0
-        float rand(vec2 c){return fract(sin(dot(c,vec2(12.9898,78.233)))*43758.5453);}
-        float hermite(float t){return t*t*(3.-2.*t);}
-        float noise(vec2 c,float f){vec2 v=c*f,i=floor(v),fr=fract(v);float a=rand(i),b=rand(i+vec2(1,0)),d=rand(i+vec2(1,1)),cc=rand(i+vec2(0,1));vec2 u=vec2(hermite(fr.x),hermite(fr.y));return mix(mix(a,b,u.x),mix(cc,d,u.x),u.y);}
-        float pnoise(vec2 c,float f,float p){float v=0.,a=1.,s=0.;for(int i=0;i<5;i++){s+=a;v+=noise(c,f)*a;f*=2.;a*=p;}return v/s;}
+    const fire = `#version 300 es
+//Main
+precision highp float;
+// ShaderToy style
+void mainImage(out vec4 color, in vec2 fragCoord) {
+    vec2 uv = fragCoord / iResolution.xy;
+    // centraliza
+    uv = uv * 2.0 - 1.0;
+    float r = length(uv);
+    float angle = atan(uv.y, uv.x);
 
-        void mainImage(out vec4 o,in vec2 fc){
-        vec2 r=iResolution.xy,uv=fc/r;float asp=r.x/r.y;
-        vec2 ua=vec2(uv.x*asp,uv.y),pos=fc/r.x;pos.x*=asp;pos.y-=iTime*.3125;
-        float g=(1.-ua.y)*.5,gs=.2,n=pnoise(pos,8.,.5);
-        float f=smoothstep(0.,n,g),d=smoothstep(0.,n,g-gs),m=smoothstep(0.,n,g-gs*2.);
-        vec4 bc=vec4(1.,.65,.1,1.),dc=vec4(1.,0.,.15,1.),mc=mix(bc,dc,.5);
-        vec4 col=mix(bc,dc,f-d);col=mix(col,mc,d-m);
-        o=vec4(col.rgb,f);
-        }
-
-        //Main
-        void mainImage(out vec4 o,in vec2 fc){
-        o=texture2D(iChannel0,fc/iResolution.xy);
-        //o=vec4(1.0,0.0,0.1,1.0);
-        }`;
+    float wave = sin(10.0 * r - iTime * 2.0);
+    vec3 col = vec3(
+        0.5 + 0.5 * cos(iTime + angle + vec3(0.0, 2.0, 4.0))
+    );
+    col *= wave;
+    color = vec4(col, 1.0);
+}`;
 
     const test = `//Main
       void mainImage(out vec4 o,in vec2 fc){
@@ -252,34 +252,34 @@
       }`;
 
 
-  
+
 
 
     (async () => { //using assync function
       var response = await shader.ShaderText(
         'shaderText',
-        `attribute vec2 position;\nvoid main() {\ngl_Position = vec4(position, 0, 1);\n}`,
+        `in vec2 position;void main() {gl_Position = vec4(position, 0.0, 1.0);}`,
         fire,
         { frameSkip: 0, alpha: true, glyph: true }
       );
-      
+
       //new funcionality test - convert to [svg text->path ] with openType 
       // Works only if used SetShaderText with [options.glyph=true] and font used in CSS is ttf or woff
       //response = await shader.convertToGlyphs(); //return array of glyphs 
-      
+
       //check onclick test in first letter if as glyph or in text point
-      console.log(response);      
-      var pathortext=Array.isArray(response) ? response[0] : response;
+      console.log(response);
+      var pathortext = Array.isArray(response) ? response[0] : response;
       pathortext.onclick = (e) => {
         const tpx = e.clientX - pathortext.getBoundingClientRect().left;
         const tpy = e.clientY - pathortext.getBoundingClientRect().top;
-        console.log('clicked',tpx,tpy);
-      };      
+        console.log('clicked', tpx, tpy);
+      };
     })();
-    
+
 
     (() => { //just to put in my cards portfolio
-      if (location.hash === "#iframe") {      
+      if (location.hash === "#iframe") {
         const hide = () => document.querySelectorAll('.hideoniframe').forEach(el => el.style.setProperty('display', 'none', 'important'));
         document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", hide) : hide();
       }

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+  <meta name="google" value="notranslate">
+  <title>gameBoy Color</title>
+  <link rel="stylesheet" href="index.css" />
+
+</head>
+
+<body>
+  <div id="loadingScreen">
+    <div class="loader"></div>
+    <div id="loadingText">Loading...</div>
+  </div>
+
+  <section id="main">
+  </section>
+
+  <canvas id="mainCanvas" style="position: absolute;left: 10px;top:10px;"></canvas>
+
+  <script type="text/javascript" src="gbc.js"></script>
+
+  <script>
+    var DEBUG_MESSAGES = true;
+    var DEBUG_WINDOWING = true;
+  </script>
+
+  <script type="module">
+    //https://taisel.github.io/GameBoy-Online/
+    import * as THREE from 'https://didisoftwares.ddns.net/25/three/three.module.js';
+    window.THREE = THREE;
+    import { GLTFLoader, DRACOLoader } from 'https://didisoftwares.ddns.net/25/three/gltfloader.js';
+
+
+
+    let SCREEN_WIDTH = window.innerWidth;
+    let SCREEN_HEIGHT = window.innerHeight;
+    let aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+    let controls, camera, container, ambient, scene, renderElement, renderer;
+    let parts = {};
+    let running = true;
+
+
+    const ground = 0;
+    const hdrloader = new THREE.HDRLoader();
+    const glbloader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://didisoftwares.ddns.net/draco/');
+    glbloader.setDRACOLoader(dracoLoader);
+
+    glbloader.setCrossOrigin('anonymous');
+    dracoLoader.setCrossOrigin('anonymous');
+    hdrloader.setCrossOrigin('anonymous');
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    //****** update
+    let timer;
+    let accumulator = 0;
+    let lastTime = 0;
+    const maxFPS = 30;
+    const fixedTimeStep = 1 / maxFPS;
+
+    renderElement = document.getElementById('main');
+
+    function showLoading() {
+      const loading = document.getElementById("loadingScreen");
+      if (!loading) return;
+      loading.style.display = "flex";
+      loading.style.opacity = "1";
+    }
+
+    function hideLoading() {
+      const loading = document.getElementById("loadingScreen");
+      if (!loading) return;
+      loading.style.opacity = "0";
+      setTimeout(() => {
+        loading.style.display = "none";
+      }, 500);
+    }
+
+    showLoading();
+    init();    
+
+
+    async function init() {
+      scene = new THREE.Scene();
+      container = document.createElement('div');
+      if (!renderElement) {
+        document.body.appendChild(container);
+        SCREEN_WIDTH = window.innerWidth;
+        SCREEN_HEIGHT = window.innerHeight;
+        aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+      } else {
+        renderElement.appendChild(container);
+        const rect = renderElement.getBoundingClientRect();
+        SCREEN_WIDTH = rect.width;
+        SCREEN_HEIGHT = rect.height;
+        aspect = rect.width / rect.height;
+      }
+      timer = new THREE.Timer();
+      camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 2000);      
+      camera.position.set(0, ground, -5);            
+      scene.add(camera);
+
+      try {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false /*, powerPreference: "low-power"*/ });
+      } catch (e) { console.error("Fail to create WebGL"); return; }
+
+      renderer.setPixelRatio(1);
+      renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+      renderer.setAnimationLoop(update);
+      container.appendChild(renderer.domElement);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.NeutralToneMapping;//THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1;
+      renderer.autoClear = false;
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.y += ground + 0.3;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 20;
+      controls.enableRotate = true;
+      controls.enableZoom = true;
+      controls.enablePan = false;
+      controls.addEventListener('start', () => {
+        controls.autoRotate = false;
+      });
+
+
+      window.addEventListener('resize', onWindowResize);      
+      createScene();
+      window.addEventListener("pointerdown", onPointerDown);
+      window.addEventListener("keydown", btPress);
+      window.addEventListener("keyup", btRelease);
+    }
+
+const tilt = 0.1; 
+    function btPress(e) {
+      switch (e.code) {
+        case "KeyX":
+          parts.butb.position.y = 0.03;
+          break;
+
+        case "KeyZ":
+          parts.butta.position.y = 0.03;
+          break;
+
+        case "ShiftLeft":
+        case "ShiftRight":
+          parts.bts.position.y = 0.03;
+          break;
+
+        case "Enter":
+          parts.btst.position.y = 0.03;
+          break;
+
+          case "ArrowUp":
+      parts.arrow.rotation.x = -tilt;
+      break;
+
+    case "ArrowDown":
+      parts.arrow.rotation.x = tilt;
+      break;
+
+    case "ArrowLeft":
+      parts.arrow.rotation.z = -tilt;
+      break;
+
+    case "ArrowRight":
+      parts.arrow.rotation.z = tilt;
+      break;
+  }
+    };
+
+    function btRelease(e) {
+      switch (e.code) {
+        case "KeyX":
+          parts.butb.position.y = 0;
+          break;
+
+        case "KeyZ":
+          parts.butta.position.y = 0;
+          break;
+
+        case "ShiftLeft":
+        case "ShiftRight":
+          parts.bts.position.y = 0;
+          break;
+
+        case "Enter":
+          parts.btst.position.y = 0;
+          break;
+
+          case "ArrowUp":
+    case "ArrowDown":
+      parts.arrow.rotation.x = 0;
+      break;
+
+    case "ArrowLeft":
+    case "ArrowRight":
+      parts.arrow.rotation.z = 0;
+      break;
+  }
+    };
+
+
+
+
+
+    function onWindowResize() {
+      if (!renderElement) {
+        SCREEN_WIDTH = window.innerWidth;
+        SCREEN_HEIGHT = window.innerHeight;
+        aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+      } else {
+        const rect = renderElement.getBoundingClientRect();
+        SCREEN_WIDTH = rect.width;
+        SCREEN_HEIGHT = rect.height;
+        aspect = rect.width / rect.height;
+      }
+      camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+      camera.updateProjectionMatrix();
+      renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+    }
+
+    function update() {
+      timer.update();
+      let delta = timer.getDelta();
+      if (delta > 0.1) delta = 0.1;
+      accumulator += delta;
+      while (accumulator >= fixedTimeStep) {
+        accumulator -= fixedTimeStep;
+      }
+      if (parts && parts.tela && parts.tela.material && parts.tela.material.map) {
+        parts.tela.material.map.needsUpdate = true;
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+
+    function onPointerDown(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(scene.children, true);
+      if (!hits.length) return;
+      const hit = hits[0].object;
+      //console.log(hit);
+      if (hit.name) {
+        if (hit.name === "power") powerClick();
+      }
+    }
+
+    function powerClick() {
+      gbpower(running);
+      running = !running;
+    }
+
+
+
+    function gbpower(onoff) {
+      if (onoff) {
+        loadROMFromURL('https://didisoftwares.ddns.net/25/smb.bin');
+        parts.power.position.z = 0;
+        parts.led.visible = true;
+        parts.tela.visible = true;
+        parts.tela.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff });
+        createscreen();
+      } else {
+        clearLastEmulation();
+        parts.power.position.z = 0.08;
+        parts.led.visible = false;
+        parts.tela.visible = false;
+      }
+    }
+
+    window.PP = gbpower;
+
+
+    function createscreen() {
+      const gamecanvas = document.getElementById('mainCanvas');
+      const uv = parts.tela.geometry.attributes.uv;
+      uv.setXY(0, 0, 1);
+      uv.setXY(1, 0, 0);
+      uv.setXY(2, 1, 1);
+      uv.setXY(3, 1, 0);
+      uv.needsUpdate = true;
+
+      const texture = new THREE.CanvasTexture(gamecanvas);
+
+      texture.flipY = true;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.NearestFilter;
+
+      texture.center.set(0.5, 0.5);
+      texture.rotation = Math.PI / 2;
+
+      texture.repeat.set(1, 1.02);
+      texture.offset.set(0, 0);
+
+
+      //parts.tela.material = parts.tela.material.clone();
+      parts.tela.material.map = texture;
+      parts.tela.material.needsUpdate = true;
+    }
+
+
+
+    async function createScene() {
+
+      //loadROMFromURL('https://didisoftwares.ddns.net/25/smb.bin');
+
+      ambient = new THREE.AmbientLight(0xffffff, 0.2);
+      scene.add(ambient);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2);
+      keyLight.position.set(3, 5, 4);
+      scene.add(keyLight);
+
+
+      hdrloader.load("https://didisoftwares.ddns.net/25/room.hdr", (texture) => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.environment = texture;
+        scene.environmentIntensity = 0.4;        
+      });
+
+
+
+      glbloader.load("https://didisoftwares.ddns.net/25/gbc.glb", (model) => {
+        model.scene.traverse(obj => {
+          if (obj.isMesh) parts[obj.name] = obj;
+        });        
+        const object = model.scene.children[0];
+        object.position.set(0, 0, 0);
+        scene.add(object);   
+        gbpower(false);
+        hideLoading();
+      });
+
+    }
+
+  </script>
+
+
+
+</body>
+
+</html>

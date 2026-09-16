@@ -20,11 +20,22 @@ html,
 
     #myContainer {
       width: 30%;      
+      max-width: 30%;
+      aspect-ratio: 16 / 9;
       background-color: #000000;
       display: flex;
       justify-content: center;
       align-items: center;
     }
+
+  /*  
+#myContainer canvas {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  background-color: #000;
+}*/
 
     .tabs {
       flex: 1;

@@ -1,4 +1,4 @@
-//iChannel1 = https://didisoftwares.ddns.net/10/noise.png
+//iChannel1 = https://didisoftwares.ddns.net/10/images/noise.png
 
 //iChannel0
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {

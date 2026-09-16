@@ -1,4 +1,3 @@
-
 //iChannel1 = https://didisoftwares.ddns.net/10/images/noise3.png
 
 //iChannel0 = https://didisoftwares.ddns.net/10/images/noise2.png
@@ -50,10 +49,9 @@ float map(vec3 p)
 }
 
 //--------------------------------------------------
-float sunXvariation=0.8*cos(0.02*iTime);
-vec3 sundir = normalize(vec3( sunXvariation ,0.0,1.0));
 
-vec4 raymarch(vec3 ro, vec3 rd, vec3 bgcol, vec2 px)
+
+vec4 raymarch(vec3 ro, vec3 rd, vec3 bgcol, vec2 px, vec3 sundir)
 {
     vec4 sum = vec4(0.0);
 
@@ -99,13 +97,16 @@ vec4 raymarch(vec3 ro, vec3 rd, vec3 bgcol, vec2 px)
 
 vec4 render(vec3 ro, vec3 rd, vec2 px)
 {
+  float sunXvariation=0.8*cos(0.02*iTime);
+  vec3 sundir = normalize(vec3( sunXvariation ,0.0,1.0));
+  
     float sun = clamp(dot(sundir,rd), 0.0, 1.0);
 
     vec3 col = vec3(0.76,0.75,0.95);
     col -= 0.6*vec3(0.90,0.75,0.95)*rd.y;
     col += 0.2*vec3(1.0,0.6,0.1)*pow(sun,8.0);
 
-    vec4 res = raymarch(ro, rd, col, px);
+    vec4 res = raymarch(ro, rd, col, px, sundir);
     col = col*(1.0-res.a) + res.rgb;
 
     col += 0.2*vec3(1.0,0.4,0.2)*pow(sun,3.0);

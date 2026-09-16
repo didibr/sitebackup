@@ -13,6 +13,9 @@ inicia o Buffer1
 //Main
 inicia o shader final exibido na tela
 
+//Common
+funcoes e variaves que são passados para todos os buffers e main render
+
 Os buffers podem ler:
 
 * iChannelX de outros buffers
@@ -47,18 +50,7 @@ Cada textura possui framebuffer próprio fixo:
 * readFBO
 * writeFBO
 
-O swap ocorre SOMENTE após todos os buffers renderizarem no frame atual.
-
-IMPORTANTE:
-
-* os shaders devem ser compatíveis com WebGL1 / GLSL ES
-* usar texture2D()
-* evitar loops extremamente pesados
-* usar precision highp float;
-* evitar recursos exclusivos de WebGL2
-
-Uniforms disponíveis:
-
+Uniforms disponíveis já cadastrados e pronto para uso no codigo:
 iResolution vec3
 iTime float
 iTimeDelta float
@@ -80,41 +72,23 @@ iAudioX contém FFT em textura.
 
 Os shaders devem ser retornados completos no formato:
 
-//iChannel0
-...
+//Common
+...codigo
 
-//iChannel1
-...
+//iChannel0
+...codigo
+
+//iChannelX
+...codigo
 
 //Main
-...
+...codigo
 
 Ou apenas:
 
 //Main
-...
+...codigo
 
-quando não precisar multipass.
-
-Os exemplos devem priorizar:
-
-* efeitos visuais avançados
-* efeitos cinematográficos
-* feedback shaders
-* raymarching
-* blur
-* distorções
-* glitch
-* fluidos
-* trails
-* miniatura/tilt-shift
-* CRT
-* VHS
-* cyberpunk
-* synthwave
-* efeitos abstratos complexos
-* shaders interativos com mouse
-* efeitos usando vídeo em iVideo0
-
+quando for simples. e sem multipass
 
 diga só OK, se etendeu

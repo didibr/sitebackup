@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<!-- EDIT -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Atari 2600 JS Builder</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <div id="world">
+        <div class="shadow"></div>
+        <div class="atari" id="atari"></div>
+    </div>
+    <div id="ui">
+        <div class="tvPopup" id="tvPopup">
+            <div class="tvHeader" id="tvHeader">
+                <div class="tvClose" id="tvClose"></div>
+            </div>
+            <div class="tvScreen">
+                <div class="tvCanvas" id="javatari">
+                    <div id="javatari-screen"></div>
+                </div>
+                <div class="tvGlass"></div>
+            </div>
+            <div class="tvBottom"></div>
+        </div>
+    </div>
+    <script>
+        const HOMESITE = 'https://didisoftwares.ddns.net/21/';
+        const world = document.getElementById('world');
+        const ui = document.getElementById('ui');
+        const atari = document.getElementById('atari');
+        const tvPopup = document.getElementById('tvPopup');
+        const tvCanvas = document.getElementById('javatari');
+        const tvHeader = document.getElementById('tvHeader');
+        const tvClose = document.getElementById('tvClose');
+        let worldScale = 1;
+        let scale = .9;
+        const tvScale = 1;
+        let rx = 62;
+        let rz = -34;
+        let dragging = false;
+        let dragX = 0;
+        let dragY = 0;
+        let popupX = window.innerWidth / 2;
+        let popupY = window.innerHeight / 2;
+        tvPopup.style.left = popupX + 'px';
+        tvPopup.style.top = popupY + 'px';
+        atari.style.pointerEvents = 'none';
+        world.style.pointerEvents = 'none';    
+    </script>
+    <script src="creation.js"></script>
+    <script src="action.js"></script>
+</body>
+
+</html>

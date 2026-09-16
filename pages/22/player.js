@@ -2,7 +2,7 @@ var hided = false;
 let statusDiv = "";
 const homesite = "https://didisoftwares.ddns.net";
 const initialPlaylist = "dance";
-const initialMusicID = 7; //i was made for lovin you
+const initialMusicID = 2; //i was made for lovin you
 var firsttime=true;
 var playerStarted=false;
 var dlaudio="";
@@ -12,6 +12,7 @@ var dlaudio="";
 let audioContext;
 let analyser;
 let analizerEmpt=true;
+let source;
 let dataArray;
 let silenceStart = null;
 let silenceThreshold = 0.01; // sensibilidade (0.005 mais sensível)
@@ -63,9 +64,12 @@ window.addEventListener("resize", () => {detectCompactMode();});
 
 function setupAudioAnalysis() {
     if (!analizerEmpt) return;
-    analizerEmpt=false;
+    analizerEmpt=false;    
     //audioContext = new(window.AudioContext || window.webkitAudioContext)();
-    const source = audioContext.createMediaElementSource(player);
+    source = audioContext.createMediaElementSource(player);
+    if(typeof(window.CreateAudioFFT)!=='undefined'){
+        window.CreateAudioFFT(source,audioContext);
+    }
     analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
     source.connect(analyser);
@@ -336,7 +340,12 @@ function changePlaylist(id) {
         renderPlaylist(); 
         if (firsttime == true) {
            //loadTrack(initialMusicID);
-           createRender(document.getElementById('pContainer'));
+           if(typeof(createRender)!=='undefined'){
+            createRender(document.getElementById('pContainer'));
+           }
+           if(typeof(window.CreateAudioFFT)!=='undefined'){
+            loadTrack(initialMusicID);
+           }
         }
         firsttime=false;      
     });

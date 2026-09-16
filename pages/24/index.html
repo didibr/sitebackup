@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+  <title>Broker</title>
+  <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+  <div id="loadingScreen">
+    <div class="loader"></div>
+    <div id="loadingText">Loading...</div>
+  </div>
+
+  <section id="main">
+  </section>
+
+
+  <script type="module">
+    import * as THREE from 'https://didisoftwares.ddns.net/24/three/three.module.js';
+    window.THREE = THREE;
+    import { AmmoLoader } from 'https://didisoftwares.ddns.net/24/three/ammo.js';
+    import { IPHYSICS } from 'https://didisoftwares.ddns.net/24/three/physics.js';
+    import { Breaker } from 'https://didisoftwares.ddns.net/24/three/breaker.js';
+    import { GLTFLoader, DRACOLoader } from 'https://didisoftwares.ddns.net/24/three/gltfloader.js';
+
+
+
+    let SCREEN_WIDTH = window.innerWidth;
+    let SCREEN_HEIGHT = window.innerHeight;
+    let aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+    //let homesite = 'https://didisoftwares.ddns.net/22/';
+    let controls, camera, container, ambient, scene, renderElement, renderer;
+    let physics, breaker;
+
+    const ground = 0;
+    const hdrloader = new THREE.HDRLoader();
+    const glbloader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://didisoftwares.ddns.net/draco/');
+    glbloader.setDRACOLoader(dracoLoader);
+
+    let statue1, statue2, hearth1; //mesh parts
+    let statue, hearth; //physic parts
+    let disablingstatue;
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+
+    //****** update
+    let timer;
+    let accumulator = 0;
+    let lastTime = 0;
+    const maxFPS = 30;
+    const fixedTimeStep = 1 / maxFPS;
+
+    renderElement = document.getElementById('main');
+
+    showLoading();
+    waitPhysics();
+
+
+    function showLoading() {
+      const loading = document.getElementById("loadingScreen");
+      if (!loading) return;
+      loading.style.display = "flex";
+      loading.style.opacity = "1";
+    }
+
+    function hideLoading() {
+      const loading = document.getElementById("loadingScreen");
+      if (!loading) return;
+      loading.style.opacity = "0";
+      setTimeout(() => {
+        loading.style.display = "none";
+      }, 500);
+    }
+
+    async function waitPhysics() {
+      window.Ammo = await AmmoLoader();
+      while (typeof (Ammo) === "undefined" || typeof Ammo.btVector3 === 'undefined') {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+      scene = new THREE.Scene();
+      physics = new IPHYSICS(THREE, scene);
+      if (physics.create) await physics.create();
+      breaker = new Breaker(physics);
+      init();
+    }
+
+
+    async function init() {
+      container = document.createElement('div');
+      if (!renderElement) {
+        document.body.appendChild(container);
+        SCREEN_WIDTH = window.innerWidth;
+        SCREEN_HEIGHT = window.innerHeight;
+        aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+      } else {
+        renderElement.appendChild(container);
+        const rect = renderElement.getBoundingClientRect();
+        SCREEN_WIDTH = rect.width;
+        SCREEN_HEIGHT = rect.height;
+        aspect = rect.width / rect.height;
+      }
+      timer = new THREE.Timer();
+      camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 2000);
+      //camera.position.set(0, ground + 42, 18);
+      camera.position.set(-10, 20.4, -29.7);
+      //camera.lookAt(0, ground + 30, 0);
+      window.CC = camera;
+      scene.add(camera);
+
+      try {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false /*, powerPreference: "low-power"*/ });
+      } catch (e) { console.error("Fail to create WebGL"); return; }
+
+      renderer.setPixelRatio(1);
+      renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+      renderer.setAnimationLoop(update);
+      container.appendChild(renderer.domElement);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.NeutralToneMapping;//THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      renderer.autoClear = false;
+      //renderer.setClearColor(0x000000, 1);
+      /*    
+      renderer.physicallyCorrectLights = true;    
+      */
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.y += ground + 15;
+      controls.autoRotate = true;
+      controls.enableRotate = true;
+      controls.enableZoom = false;
+      controls.enablePan = false;
+      controls.minPolarAngle = Math.PI * 0.2;
+      controls.maxPolarAngle = Math.PI * 0.5;
+      controls.addEventListener('start', () => {
+        controls.autoRotate = false;
+      });
+
+      
+      //controls.enabled = false;
+
+      window.addEventListener('resize', onWindowResize);
+      //window.addEventListener("keydown", (e) => { keys[e.code] = true; });
+      //window.addEventListener("keyup", (e) => { keys[e.code] = false; });      
+      createScene();
+      window.addEventListener("pointerdown", onPointerDown);
+    }
+
+    function onWindowResize() {
+      if (!renderElement) {
+        SCREEN_WIDTH = window.innerWidth;
+        SCREEN_HEIGHT = window.innerHeight;
+        aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+      } else {
+        const rect = renderElement.getBoundingClientRect();
+        SCREEN_WIDTH = rect.width;
+        SCREEN_HEIGHT = rect.height;
+        aspect = rect.width / rect.height;
+      }
+      camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+      camera.updateProjectionMatrix();
+      renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+    }
+
+    function update() {
+      timer.update();
+      let delta = timer.getDelta();
+      if (delta > 0.1) delta = 0.1;
+      accumulator += delta;
+      physics.update(delta);
+      while (accumulator >= fixedTimeStep) {
+        accumulator -= fixedTimeStep;
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+
+    function applyImpulseToParent(hit, impulse) {
+      const physObj = findPhysicsObject(hit);
+      if (!physObj) return;
+      physics.bodyImpulse(physObj, impulse);
+    }
+
+    function findPhysicsObject(obj) {
+      while (obj) {
+        if (obj.userData.physicsBody) return obj;
+        obj = obj.parent;
+      }
+      return null;
+    }
+
+    function onPointerDown(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      if (!statue1 || !statue2 || !hearth1) return;
+      const hits = raycaster.intersectObjects(
+        [statue1, statue2, hearth1],
+        true
+      );
+      if (!hits.length) return;
+
+      const hit = hits[0].object;
+      let impulse = 8;
+      if (hit.name.startsWith('angel')) impulse = 20;
+      const impulseDir = new THREE.Vector3()
+        .subVectors(hit.getWorldPosition(new THREE.Vector3()), camera.position)
+        .normalize()
+        .multiplyScalar(impulse);
+      enableStatue();
+      applyImpulseToParent(hit, impulseDir);
+    }
+
+
+    function enableStatue() {
+      statue.setLinearFactor(new Ammo.btVector3(0.8, 0.8, 0.8));
+      statue.setAngularFactor(new Ammo.btVector3(1, 0.8, 0.8));
+      statue.setRestitution(0.05); //kicar
+      statue.setFriction(1.5); //atrito
+      statue.setDamping(0.2, 0.95); //giro
+      hearth.setLinearFactor(new Ammo.btVector3(1, 1, 1));
+      hearth.setAngularFactor(new Ammo.btVector3(1, 1, 1));
+      if (disablingstatue) clearTimeout(disablingstatue);
+      disablingstatue = setTimeout(() => {
+        disablingstatue = null;
+        statue.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
+        statue.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
+        statue.setLinearFactor(new Ammo.btVector3(0, 0, 0));
+        statue.setAngularFactor(new Ammo.btVector3(0, 0, 0));
+      }, 2000);
+    }
+
+    async function createScene() {
+      ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambient);
+
+      const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+      sun.castShadow = true;
+      sun.position.set(30, 30, 24);
+      sun.shadow.mapSize.width = 2048;
+      sun.shadow.mapSize.height = 2048;
+      sun.shadow.camera.left = -100;
+      sun.shadow.camera.right = 100;
+      sun.shadow.camera.top = 100;
+      sun.shadow.camera.bottom = -100;
+      sun.shadow.camera.near = 1;
+      sun.shadow.camera.far = 100;
+      sun.shadow.bias = -0.0008;
+      scene.add(sun);
+
+      const sun2 = new THREE.DirectionalLight(0xffffff, 0.4);
+      sun2.castShadow = true;
+      sun2.position.set(-10, 30, 50);
+      sun2.shadow.mapSize.width = 2048;
+      sun2.shadow.mapSize.height = 2048;
+      sun2.shadow.camera.left = -100;
+      sun2.shadow.camera.right = 100;
+      sun2.shadow.camera.top = 100;
+      sun2.shadow.camera.bottom = -100;
+      sun2.shadow.camera.near = 1;
+      sun2.shadow.camera.far = 100;
+      sun2.shadow.bias = -0.0008;
+      scene.add(sun2);
+
+
+      const sun3 = new THREE.DirectionalLight(0xffffff, 0.4);
+      sun3.castShadow = true;
+      sun3.position.set(15, 16, -10);
+      sun3.shadow.mapSize.width = 2048;
+      sun3.shadow.mapSize.height = 2048;
+      sun3.shadow.camera.left = -100;
+      sun3.shadow.camera.right = 100;
+      sun3.shadow.camera.top = 100;
+      sun3.shadow.camera.bottom = -100;
+      sun3.shadow.camera.near = 1;
+      sun3.shadow.camera.far = 100;
+      sun3.shadow.bias = -0.0008;
+      scene.add(sun3);
+
+
+      var planeGeometry = new THREE.PlaneGeometry(400, 400);
+      var planeMaterial = new THREE.MeshPhysicalMaterial({ color: 0xcccccc, visible: false });
+      var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+      scene.add(plane);
+      plane.position.set(0, ground, 0);
+      plane.rotation.x = - Math.PI / 2;
+      physics.createObj(plane, 'box', 'wall', null, 0);
+
+      var planeSMaterial = new THREE.ShadowMaterial({ opacity: 0.2 });
+      plane = new THREE.Mesh(planeGeometry, planeSMaterial);
+      plane.receiveShadow = true;
+      scene.add(plane);
+      plane.position.set(0, ground, 0);
+      plane.rotation.x = - Math.PI / 2;
+
+
+      const hearthMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xaa0000,          // vermelho escuro
+        emissive: 0x220000,
+        emissiveIntensity: 0.15,
+        metalness: 0.0,
+        roughness: 0.02,
+        transparent: true,
+        opacity: 1,
+        transmission: 1.0,        // transparente
+        thickness: 2.5,           // espessura do cristal
+        ior: 2.4,                 // índice de refração (diamante ≈2.4)
+        reflectivity: 1.0,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.0,
+        attenuationColor: new THREE.Color(0xff2020),
+        attenuationDistance: 0.4,
+        envMapIntensity: 2.0
+      });
+
+
+
+      hdrloader.load("https://didisoftwares.ddns.net/24/neon.hdr", (texture) => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.environment = texture;
+        // opcional: scene.background = texture;
+        const skybox = new THREE.GroundedSkybox(texture, 30, 70);
+        skybox.position.y = 30;
+        scene.add(skybox);
+      });
+
+
+      function loadHeart() {
+        glbloader.load("https://didisoftwares.ddns.net/24/heart.glb", (model) => {
+          const object = model.scene.children[0];
+          object.scale.multiplyScalar(50.0);
+          object.position.set(-7.6, 20.2, 0.1);
+          //object.position.set(-4.2, 20.5, 0.2);
+          //object.rotation.set(-0.2,0.1,-0.1);
+          object.material = hearthMaterial;
+          object.castShadow = true;
+          scene.add(object);
+          hearth1 = object;
+          physics.createObj(object, 'mesh', 'obj', null, 2);
+          hearth = object.userData.physicsBody;
+          breaker.add(object, { explosion: 4.0, mass: 2, hardness: 5, physicsType: "mesh", physicsModel: "obj" });
+          setTimeout(() => {
+            hearth.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
+            hearth.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
+            hearth.setLinearFactor(new Ammo.btVector3(0, 0, 0));
+            hearth.setAngularFactor(new Ammo.btVector3(0, 0, 0));
+            hideLoading();
+          }, 100);
+
+        });
+      }
+
+      glbloader.load("https://didisoftwares.ddns.net/24/statue.glb", (model) => {
+        const object = model.scene.children[1]; //low poly object
+        const visual = model.scene.children[0]; //hight poly object
+
+
+
+
+        window.AA = object;
+        window.BB = visual;
+
+        object.scale.multiplyScalar(2.0);
+        object.position.set(0, ground, 0);
+        //object.rotation.set(1,1,0);
+        //object.children[0].visible=false;
+
+        scene.add(object);
+        physics.createObj(object, 'hull', 'obj', null, 15, null, { ignoreCentroid: true });
+        statue = object.userData.physicsBody;
+
+        object.children[0].children[0].visible = false;
+        object.children[0].add(visual);
+        visual.rotation.set(0, 0, 0);
+        visual.traverse(child => {
+          if (child.isMesh && child.geometry) {
+            if (!statue1) { statue1 = child; } else { statue2 = child };//2 parts statue
+            child.castShadow = true;
+            //goldem
+            const old = child.material;
+            child.material = new THREE.MeshPhysicalMaterial({
+              color: 0xd4af37,
+              metalness: 1,
+              roughness: 0.2,
+              //normalMap: old.map,
+              roughnessMap: old.map,
+              aoMap: old.map,
+              aoMapIntensity: 0.6,
+              envMapIntensity: 2.5
+            });
+
+
+          }
+        });
+
+        //breaker.add(object,{mass:5,hardness:40,physicsType:"mesh",physicsModel:"obj"});
+        setTimeout(() => {
+          statue.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
+          statue.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
+          statue.setLinearFactor(new Ammo.btVector3(0, 0, 0));
+          statue.setAngularFactor(new Ammo.btVector3(0, 0, 0));
+          setTimeout(() => {
+            loadHeart();
+          }, 500);
+        }, 1000);
+
+      });
+
+
+
+
+
+
+
+
+    }
+
+  </script>
+
+</body>
+
+</html>

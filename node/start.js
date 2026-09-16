@@ -153,6 +153,7 @@ function onSocketRequest(msg, conn) {
 //server.addAllowedOPTIONS("https://cdpn.io");
 
 //acessos permitidos
+server.addAcess("/jane/");
 server.addAcess("/draco/");
 server.addAcess("/google151c9e4ea39f1432.html");
 server.addAcess("/player/");
@@ -177,6 +178,7 @@ server.addAcess("/historico/"); //special acess on server.js
 server.addAcess("/historico"); //POST REQUEST
 server.addBlock("/historico/historico.js"); //block
 server.addBlock("/historico/dados");
+
 //server.addAcess("/google151c9e4ea39f1432.html");
 for(var i=1;i<50;i++){ //PAGES
 server.addAcess(`/${i}/`);
@@ -194,6 +196,7 @@ server.AllowTransfer.add(".7z", null, "application/x-7z-compressed");
 server.AllowTransfer.add(".exe", null, "application/x-msdownload");
 server.AllowTransfer.add(".json", null, "application/json");
 server.AllowTransfer.add(".mp4", null, "video/mp4");
+server.AllowTransfer.add(".3gp", null, "application/octet-stream");
 server.AllowTransfer.add(".wav", null, "audio/wav");
 server.AllowTransfer.add(".mp3", null, "audio/mpeg");
 server.AllowTransfer.add(".glb", null, "application/octet-stream");
@@ -204,6 +207,7 @@ server.AllowTransfer.add(".bin", null, "application/octet-stream");
 server.AllowTransfer.add(".hdr", null, "application/octet-stream");
 server.AllowTransfer.add(".pmx", null, "application/octet-stream");
 server.AllowTransfer.add(".vmd", null, "application/octet-stream");
+server.AllowTransfer.add(".data", null, "application/octet-stream");
 server.AllowTransfer.add(".error", null, "text/html");
 server.AllowTransfer.add(".svg", null, "image/svg+xml");
 server.AllowTransfer.add(".zip", null, "application/zip");
@@ -213,6 +217,8 @@ server.AllowTransfer.add(".ttf", null, "font/truetype");
 server.AllowTransfer.add(".xml", null, "text/xml");
 server.AllowTransfer.add(".txt", null, "text/plain");
 server.AllowTransfer.add(".pdf", null, "application/pdf");
+server.AllowTransfer.add(".wmv", null, "video/x-ms-wmv");
+
 
 
 

@@ -1,0 +1,194 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <title>Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('./roboto-black.ttf') format('truetype');
+            font-weight: 900;
+            font-style: normal;
+            font-display: block;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: "Inter", sans-serif;
+            background-color: rgb(226, 21, 21);
+        }
+
+        .fontStyle {
+            font-size: 8vw;
+            /*font-family: 'Roboto', sans-serif;*/
+            text-align: center;
+            width: 640px;
+            height: 360px;
+            display: block;
+            border: 0px;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="button" onclick="ShaderPlayEditor.show();" value="Editor"
+        style="padding: 6px; margin: 5px; background-color: aqua;">
+
+    <div id="shaderText" class="fontStyle">
+    </div>
+
+
+
+
+    <script type="module">
+
+        const videoX = "https://didisoftwares.ddns.net/" + "10/videos/leopard.mp4";
+
+        import { ShaderPlay } from "https://didisoftwares.ddns.net/10/shaderplay.js";
+        const shader = ShaderPlay.create();
+        //window.SS = shader;
+
+        //shader.setResolution(512, 300);
+        shader.setResolution(640, 360);
+        shader.createVideoChannel(videoX, 0);
+
+
+
+
+const main=`
+#version 300 es
+//Main
+
+vec3 chromaKey(vec3 col)
+{
+    // remove verde simples
+    float g = col.g;
+    float rb = max(col.r, col.b);
+
+    float mask = 1.0 - smoothstep(
+        0.05,
+        0.35,
+        g - rb
+    );
+
+    return col * mask;
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
+{
+    float t = mod(iTime, 30.0);
+
+    float res = max(iResolution.x, iResolution.y);
+    float maxScale = res / 9.0;
+
+    // mesmo comportamento do shader original
+    float scale = mix(
+        4.0,
+        maxScale,
+        smoothstep(2.0, 15.0, t)
+        - smoothstep(20.0, 30.0, t)
+    );
+
+    vec2 uv =
+        scale *
+        ((fragCoord - iResolution.xy * 0.5) / res);
+
+    float pixel = scale / res;
+
+    vec2 pixeluv = fract(uv);
+
+    vec2 videouv =
+        floor(uv) / maxScale
+        + vec2(0.5);
+
+    videouv = clamp(videouv, 0.0, 1.0);
+
+    vec3 vid =
+        texture(
+            iVideo0,
+            videouv
+        ).rgb;
+
+    vid = chromaKey(vid);
+
+    vid = clamp(vid, 0.0, 1.0);
+
+    vec3 col = vec3(0.0);
+
+    // R
+    col.r = smoothstep(
+        pixel,
+        0.0,
+        max(
+            pixeluv.y - vid.r,
+            pixeluv.x - 0.333333 + pixel
+        )
+    );
+
+    // G
+    col.g = smoothstep(
+        pixel,
+        0.0,
+        max(
+            pixeluv.y - vid.g,
+            max(
+                pixeluv.x - 0.666666 + pixel,
+                0.333333 - pixeluv.x + pixel
+            )
+        )
+    );
+
+    // B
+    col.b = smoothstep(
+        pixel,
+        0.0,
+        max(
+            pixeluv.y - vid.b,
+            0.666666 - pixeluv.x + pixel
+        )
+    );
+
+    // borda dos pixels
+    col *= smoothstep(
+        0.0,
+        4.0 * pixel * smoothstep(10.0, 1.0, scale),
+        min(
+            min(pixeluv.y, 1.0 - pixeluv.y),
+            min(pixeluv.x, 1.0 - pixeluv.x)
+        )
+    );
+
+    fragColor = vec4(col, 1.0);
+}
+`;
+
+
+
+        const vertex2 = `in vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0);}`;
+
+        (async () => { //using assync function        
+            
+            const fullshader=main;   
+            var response = await shader.Shader('shaderText', vertex2, fullshader 
+            /*,{ texture: { minFilter: "NEAREST", magFilter: "NEAREST" } }*/
+            );
+            console.log('compiled');
+            
+            window.VX = shader;
+            
+            shader.uniform('uStartTime', shader.state.lastTime);
+            shader.uniform('uReset',0.0);
+
+            
+
+
+        })();
+
+
+    </script>
+</body>
+
+</html>
