@@ -64,7 +64,7 @@ import {
 	VectorKeyframeTrack,
 	SRGBColorSpace,
 	InstancedBufferAttribute
-} from 'https://didisoftwares.ddns.net/25/three/three.module.js';
+} from 'https://cdn.jsdelivr.net/gh/didibr/sitebackup/25/three/three.module.js';
 
 //const LinearSRGBColorSpace = 'srgb-linear';
 //const SRGBColorSpace = 'srgb';
