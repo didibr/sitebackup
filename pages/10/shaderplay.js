@@ -16,17 +16,14 @@ export const ShaderPlay = (() => {
       positionBuffer: null,
       buffers: [],
       texStatic: [],
-      mouse: { x: 0, y: 0, clickX: -1, clickY: -1, isDown: false, justPressed:false },      
+      mouse: { x: 0, y: 0, clickX: -1, clickY: -1, isDown: false, justPressed: false },
       config: {
         frameSkip: 0,
         precision: "highp",
         alpha: false,
         glyph: false,
-        //bufferFilter: "Linear", // or Linear
-        //bufferTexture: "UNSIGNED_BYTE", // or UNSIGNED_BYTE
-        //bufferFormat: "RGBA32F", // RGBA8 or RGBA16F or RGBA32F
-        //pixelPerfect: false, //vec2 fragCoord is pixel or -1 # 1
         texture: {
+          mipmaps: false,
           target: "TEXTURE_2D",
           level: 0,
           internalFormat: "RGBA32F", //RGBA
@@ -64,7 +61,7 @@ export const ShaderPlay = (() => {
       iFrameLocation: null,
       iFrameRateLocation: null,
       iMouseLocation: null,
-      iMousePressed:null,
+      iMousePressed: null,
       iDateLocation: null,
       iChannelLocations: [],
       MAX_AUDIOS: 4,
@@ -342,7 +339,7 @@ export const ShaderPlay = (() => {
       };
     }
 
-  
+
 
     function resizeBuffersToMatchCanvas() {
       const width = measuretCanvas().width;
@@ -769,20 +766,11 @@ export const ShaderPlay = (() => {
     }
 
 
-
-
-
     function compileShader(gl, source, type, lineOffset) {
       const shader = gl.createShader(type);
-
-
       let fullSource = source;
       let header = "";
       let localHeaderLen = 0;
-
-
-
-
       if (type === gl.FRAGMENT_SHADER) {
         if (state.webGlversion == 1) {
           //GLS1
@@ -818,17 +806,14 @@ export const ShaderPlay = (() => {
           for (let i = 0; i < state.MAX_CHANNELS; i++) {
             channels += `uniform sampler2D iChannel${i};\n`;
           }
-
           let audioUniforms = "";
           for (let i = 0; i < state.MAX_AUDIOS; i++) {
             audioUniforms += `uniform sampler2D iAudio${i};\n`;
           }
-
           let videoUniforms = "";
           for (let i = 0; i < state.MAX_VIDEOS; i++) {
             videoUniforms += `uniform sampler2D iVideo${i};\n`;
           }
-
           header = `precision ${state.config.precision} float; out vec4 fragColor; uniform vec3 iResolution; uniform float iTime; uniform float iTimeDelta; uniform float iFrameRate; uniform int iFrame; uniform vec4 iMouse;uniform float iMousePressed; uniform vec4 iDate; uniform float iBeat;
         ${channels}
         ${audioUniforms}
@@ -841,7 +826,6 @@ export const ShaderPlay = (() => {
         }
         `;
           const wrapper = `void main() { mainImage(fragColor, gl_FragCoord.xy);} `;
-
           // adapta funções antigas automaticamente
           let adaptedSource = source
             .replace(/^\s*#version.*$/gm, '')
@@ -854,34 +838,25 @@ export const ShaderPlay = (() => {
           ${header}
           ${adaptedSource}
           ${wrapper}`;
-
         }
       }
-
       if (type === gl.VERTEX_SHADER && state.webGlversion == 3) {
         let adapted = source
           .replace(/^\s*#version.*$/gm, '') // ✅ REMOVE SEMPRE
           .replace(/\battribute\b/g, "in")
           .replace(/\bvarying\b/g, "out");
-
         fullSource = `#version 300 es
         ${adapted}`;
       }
-
       //console.log(fullSource);
-
       gl.shaderSource(shader, fullSource);
       gl.compileShader(shader);
-
       if (state.errorDiv) state.errorDiv.textContent = '';
-
       //console.log(state.vv);
       //console.log("lost?", gl.isContextLost && gl.isContextLost());
-
       const glstatus = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
       if (!glstatus) {
         const errorMsg = gl.getShaderInfoLog(shader);
-
         const shaderType = type === gl.VERTEX_SHADER ? 'VERTEX' : 'FRAGMENT';
         const codeEditor = type === gl.VERTEX_SHADER ? state.codevertex : state.codefrag;
         const linesMarked = [];
@@ -911,6 +886,7 @@ export const ShaderPlay = (() => {
       }
       return shader;
     }
+
 
     function createProgram(gl, vs, fs) {
       //console.log(state.isEditorMode, state.vv, state.errorDiv);      
@@ -947,126 +923,119 @@ export const ShaderPlay = (() => {
     }
 
     function applyUniform(program, name, entry) {
-
       if (!entry) return;
-
       const { value, type = "float" } = entry;
       const gl = state.gl;
-
-      let loc = cacheUniform(program, name);
-
-      // ⚠️ WebGL pode retornar null (uniform não usado)
+      const isArrayType = type.endsWith("[]");
+      let loc = cacheUniform(
+        program,
+        isArrayType ? `${name}[0]` : name
+      );
       if (loc === null) return;
-
-      // =========================================
-      // ✅ BOOLEAN (sempre como int)
-      // =========================================
+      // Boolean
       if (typeof value === "boolean") {
         gl.uniform1i(loc, value ? 1 : 0);
         return;
       }
-
-      // =========================================
-      // ✅ NUMBER (respeita type)
-      // =========================================
+      // Number
       if (typeof value === "number") {
-
-        if (type && type.startsWith("int")) {
+        if (type.startsWith("int")) {
           gl.uniform1i(loc, value | 0);
         } else {
           gl.uniform1f(loc, value);
         }
-
         return;
       }
-
-      // =========================================
-      // ✅ FLOAT32ARRAY
-      // =========================================
+      // Float32Array
       if (value instanceof Float32Array) {
-
-        const len = value.length;
-
-        loc = cacheUniform(program, name + "[0]");
-        if (loc === null) return;
-
-        if (len % 4 === 0) gl.uniform4fv(loc, value);
-        else if (len % 3 === 0) gl.uniform3fv(loc, value);
-        else if (len % 2 === 0) gl.uniform2fv(loc, value);
-        else gl.uniform1fv(loc, value);
-
+        switch (type) {
+          case "float":
+          case "float[]":
+          case "vec1[]":
+            gl.uniform1fv(loc, value);
+            break;
+          case "vec2":
+          case "vec2[]":
+            gl.uniform2fv(loc, value);
+            break;
+          case "vec3":
+          case "vec3[]":
+            gl.uniform3fv(loc, value);
+            break;
+          case "vec4":
+          case "vec4[]":
+            gl.uniform4fv(loc, value);
+            break;
+          default:
+            gl.uniform1fv(loc, value);
+        }
         return;
       }
-
-      // =========================================
-      // ✅ INT32ARRAY
-      // =========================================
+      // Int32Array
       if (value instanceof Int32Array) {
-
-        loc = cacheUniform(program, name + "[0]");
-        if (loc === null) return;
-
-        const len = value.length;
-        if (len % 4 === 0) gl.uniform4iv(loc, value);
-        else if (len % 3 === 0) gl.uniform3iv(loc, value);
-        else if (len % 2 === 0) gl.uniform2iv(loc, value);
-        else gl.uniform1iv(loc, value);
+        switch (type) {
+          case "int":
+          case "int[]":
+          case "ivec1[]":
+            gl.uniform1iv(loc, value);
+            break;
+          case "ivec2":
+          case "ivec2[]":
+            gl.uniform2iv(loc, value);
+            break;
+          case "ivec3":
+          case "ivec3[]":
+            gl.uniform3iv(loc, value);
+            break;
+          case "ivec4":
+          case "ivec4[]":
+            gl.uniform4iv(loc, value);
+            break;
+          default:
+            gl.uniform1iv(loc, value);
+        }
         return;
       }
-
-      // =========================================
-      // ✅ ARRAY NORMAL (JS ARRAY)
-      // =========================================
+      // Array JS comum
       if (Array.isArray(value)) {
-
         const len = value.length;
-
-        // ================= ARRAY GRANDE =================
-        if (len > 4) {
-
-          loc = cacheUniform(program, name + "[0]");
-          if (loc === null) return;
-
-          if (type && type.startsWith("int")) {
-
-            gl.uniform1iv(loc, new Int32Array(value));
-
+        if (len > 4 || isArrayType) {
+          if (type.startsWith("int")) {
+            const arr = new Int32Array(value);
+            if (type === "ivec2[]" || type === "ivec2")
+              gl.uniform2iv(loc, arr);
+            else if (type === "ivec3[]" || type === "ivec3")
+              gl.uniform3iv(loc, arr);
+            else if (type === "ivec4[]" || type === "ivec4")
+              gl.uniform4iv(loc, arr);
+            else
+              gl.uniform1iv(loc, arr);
           } else {
-
             const arr = new Float32Array(value);
-
-            if (len % 4 === 0) gl.uniform4fv(loc, arr);
-            else if (len % 3 === 0) gl.uniform3fv(loc, arr);
-            else if (len % 2 === 0) gl.uniform2fv(loc, arr);
-            else gl.uniform1fv(loc, arr);
+            if (type === "vec2[]" || type === "vec2")
+              gl.uniform2fv(loc, arr);
+            else if (type === "vec3[]" || type === "vec3")
+              gl.uniform3fv(loc, arr);
+            else if (type === "vec4[]" || type === "vec4")
+              gl.uniform4fv(loc, arr);
+            else
+              gl.uniform1fv(loc, arr);
           }
-
           return;
         }
-
-        // ================= VETORES PEQUENOS =================
-
-        if (type && type.startsWith("int")) {
-
+        if (type.startsWith("int")) {
           if (len === 1) gl.uniform1i(loc, value[0] | 0);
           else if (len === 2) gl.uniform2i(loc, value[0] | 0, value[1] | 0);
           else if (len === 3) gl.uniform3i(loc, value[0] | 0, value[1] | 0, value[2] | 0);
           else if (len === 4) gl.uniform4i(loc, value[0] | 0, value[1] | 0, value[2] | 0, value[3] | 0);
-
         } else {
-
           if (len === 1) gl.uniform1f(loc, value[0]);
           else if (len === 2) gl.uniform2f(loc, value[0], value[1]);
           else if (len === 3) gl.uniform3f(loc, value[0], value[1], value[2]);
           else if (len === 4) gl.uniform4f(loc, value[0], value[1], value[2], value[3]);
-
         }
-
-        return;
       }
-
     }
-
 
     function bindEvents() {
       function updateMousePosition(e) {
@@ -1085,7 +1054,6 @@ export const ShaderPlay = (() => {
       const mm = (e) => {
         updateMousePosition(e);
       };
-
       const md = (e) => {
         updateMousePosition(e);
         state.mouse.isDown = true;
@@ -1093,11 +1061,9 @@ export const ShaderPlay = (() => {
         state.mouse.clickX = state.mouse.x;
         state.mouse.clickY = state.mouse.y;
       };
-
       const mu = () => {
-        state.mouse.isDown = false;        
+        state.mouse.isDown = false;
       };
-
       // ===== TOUCH =====
       const touchstart = (e) => {
         if (!e.touches.length) return;
@@ -1106,13 +1072,11 @@ export const ShaderPlay = (() => {
           clientX: t.clientX,
           clientY: t.clientY
         };
-
         updateMousePosition(fakeEvent);
         state.mouse.isDown = true;
         state.mouse.justPressed = true;
         state.mouse.clickX = state.mouse.x;
         state.mouse.clickY = state.mouse.y;
-
         // 🔥 DOUBLE TAP = CLICK
         const now = Date.now();
         if (now - lastTapTime < doubleTapDelay) {
@@ -1121,29 +1085,23 @@ export const ShaderPlay = (() => {
         }
         lastTapTime = now;
       };
-
       const touchmove = (e) => {
         if (!e.touches.length) return;
-
         const t = e.touches[0];
-
         updateMousePosition({
           clientX: t.clientX,
           clientY: t.clientY
         });
       };
-
       const touchend = () => {
-        state.mouse.isDown = false;        
+        state.mouse.isDown = false;
       };
-
       addGlobalEvent(document, "visibilitychange", () => {
         state.isPaused = document.hidden;
         if (!state.isPaused && !state.rafId) {
           render();
         }
       });
-
       // ===== BIND =====
       if (state.svg) {
         addGlobalEvent(window, "mousemove", mm);
@@ -1156,9 +1114,7 @@ export const ShaderPlay = (() => {
         addGlobalEvent(state.canvas, "touchstart", touchstart);
         addGlobalEvent(state.canvas, "touchmove", touchmove);
       }
-
       addGlobalEvent(window, "mouseup", mu);
-
       addGlobalEvent(window, "touchend", touchend);
     }
 
@@ -1169,87 +1125,63 @@ export const ShaderPlay = (() => {
       }
       removeAllGlobalEvents();
       if (state.resizeTimeout) clearTimeout(state.resizeTimeout);
-
       const gl = state.gl;
       const program = state.program;
       try {
         if (gl) {
           gl.useProgram(null);
           if (program) gl.deleteProgram(program);
-
           if (state.positionBuffer) gl.deleteBuffer(state.positionBuffer);
-
           if (state.buffers) {
             for (let i = 0; i < state.buffers.length; i++) {
               state.buffers[i]?.destroy?.();
             }
           }
-
           if (state.texStatic) {
             for (let t of state.texStatic) {
               if (t) gl.deleteTexture(t);
             }
           }
-
-
           state._uniformCache = null;
-
           const ext = gl.getExtension("WEBGL_lose_context");
           if (ext) ext.loseContext();
         }
       } catch { }
-
-
       try {
         state.canvas?.remove?.();
         state.svg?.remove?.();
       } catch { }
-
       state.canvas = null;
       state.svg = null;
       state.text = null;
       state.textNode = null;
-
-
       try {
         state.codevertex?.toTextArea?.();
         state.codefrag?.toTextArea?.();
       } catch { }
-
       state.codevertex = null;
       state.codefrag = null;
-
-
       state.program = null;
       state.gl = null;
       state.positionBuffer = null;
-
       state.buffers = [];
       state.texStatic = [];
       state.texStatic0 = null;
       state.texStatic1 = null;
-
       state.customUniforms = {};
       state.lastUniforms = {};
-
       state.rafId = null;
       state.frameCount = 0;
       state.lastTime = 0;
       state.skipCounter = 0;
-
       state.executionOrder = [];
       state.linearOrder = [];
       state.loopNodes.clear?.();
-
       state.glyphs = null;
       state.svg = null;
-
       state.mouse = { x: 0, y: 0, clickX: 0, clickY: 0, isDown: false };
-
-
       state.alreadyInitied = false;
       state.destroyed = false;
-
       try {
         if (state.container && state.container.contains(state.canvas)) {
           state.container.innerHTML = "";
@@ -1394,12 +1326,6 @@ export const ShaderPlay = (() => {
         }
       }
 
-
-
-
-
-
-
       function drawToBuffer(buf) {
         if (!buf || !buf.program) return;
         gl.useProgram(buf.program);
@@ -1414,19 +1340,15 @@ export const ShaderPlay = (() => {
           0,
           buf.width, buf.height
         );
-
         gl.bindBuffer(
           gl.ARRAY_BUFFER,
           state.positionBuffer
         );
-
         const loc = cacheAttrib(
           buf.program,
           'position'
         );
-
         gl.enableVertexAttribArray(loc);
-
         gl.vertexAttribPointer(
           loc,
           2,
@@ -1435,59 +1357,48 @@ export const ShaderPlay = (() => {
           0,
           0
         );
-
         gl.uniform3f(
           cacheUniform(buf.program, 'iResolution'),
           buf.width, buf.height,
           1
         );
-
         gl.uniform1f(
           cacheUniform(buf.program, 'iTime'),
           time
         );
-
         gl.uniform1f(
           cacheUniform(buf.program, 'iTimeDelta'),
           deltaTime
         );
-
         gl.uniform1f(
           cacheUniform(buf.program, 'iFrameRate'),
           deltaTime > 0 ? 1.0 / deltaTime : 0.0
         );
-
         gl.uniform1i(
           cacheUniform(buf.program, 'iFrame'),
           state.frameCount - 1
         );
-
-
         gl.uniform4f(
-        cacheUniform(buf.program, 'iMouse'),
-        state.mouse.x,
-        state.mouse.y,
-
-        // z
-        state.mouse.isDown
-          ? state.mouse.clickX
-          : -state.mouse.clickX,
-
-        // w
-        state.mouse.justPressed
-          ? -state.mouse.clickY
-          : (
+          cacheUniform(buf.program, 'iMouse'),
+          state.mouse.x,
+          state.mouse.y,
+          // z
+          state.mouse.isDown
+            ? state.mouse.clickX
+            : -state.mouse.clickX,
+          // w
+          state.mouse.justPressed
+            ? -state.mouse.clickY
+            : (
               state.mouse.isDown
                 ? state.mouse.clickY
                 : -state.mouse.clickY
             )
-      );
-
-      gl.uniform1f(
-  cacheUniform(buf.program, 'iMousePressed'),
-  state.mouse.justPressed ? 1.0 : 0.0
-);
-
+        );
+        gl.uniform1f(
+          cacheUniform(buf.program, 'iMousePressed'),
+          state.mouse.justPressed ? 1.0 : 0.0
+        );
         gl.uniform4f(
           cacheUniform(buf.program, 'iDate'),
           now.getFullYear(),
@@ -1495,16 +1406,12 @@ export const ShaderPlay = (() => {
           now.getDate(),
           seconds
         );
-
         // CHANNELS        
-
         for (let i = 0; i < state.MAX_CHANNELS; i++) {
-
           let tex = null;
-
           if (buffers[i] && i !== buf.id) {
             tex = buffers[i].read;
-          } else if (texStatic[i]) {            
+          } else if (texStatic[i]) {
             tex = texStatic[i];
           }
           else if (state.usedChannels && state.usedChannels.includes(i)) {
@@ -1512,7 +1419,6 @@ export const ShaderPlay = (() => {
               const gl = state.gl;
               const empty = gl.createTexture();
               gl.bindTexture(gl.TEXTURE_2D, empty);
-
               gl.texImage2D(
                 gl.TEXTURE_2D,
                 0,
@@ -1524,168 +1430,121 @@ export const ShaderPlay = (() => {
                 gl.UNSIGNED_BYTE,
                 new Uint8Array([0, 0, 0, 255]) // preto
               );
-
               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
               gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
               state._emptyTexture = empty;
             }
             tex = state._emptyTexture;
           }
-
-
           if (tex) {
-
-            gl.activeTexture(gl.TEXTURE0 + i);                        
+            gl.activeTexture(gl.TEXTURE0 + i);
             gl.bindTexture(
               gl.TEXTURE_2D,
               tex
             );
-
             const loc = cacheUniform(
               buf.program,
               'iChannel' + i
             );
-
             if (loc !== null) {
-
               gl.uniform1i(loc, i);
             }
           }
         }
-
         // AUDIOS
-
         for (let i = 0; i < state.MAX_AUDIOS; i++) {
-
           const tex = state.audioTextures[i];
-
           if (!tex) continue;
-
           const unit =
             state.MAX_CHANNELS + i;
-
           gl.activeTexture(
             gl.TEXTURE0 + unit
           );
-
           gl.bindTexture(
             gl.TEXTURE_2D,
             tex
           );
-
           const loc = cacheUniform(
             buf.program,
             'iAudio' + i
           );
-
           if (loc !== null) {
-
             gl.uniform1i(loc, unit);
           }
         }
-
         // VIDEOS
-
         for (let i = 0; i < state.MAX_VIDEOS; i++) {
-
           const tex = state.videoTextures[i];
-
           if (!tex) continue;
-
           const unit =
             state.MAX_CHANNELS +
             state.MAX_AUDIOS +
             i;
-
           gl.activeTexture(
             gl.TEXTURE0 + unit
           );
-
           gl.bindTexture(
             gl.TEXTURE_2D,
             tex
           );
-
           const loc = cacheUniform(
             buf.program,
             'iVideo' + i
           );
-
           if (loc !== null) {
-
             gl.uniform1i(loc, unit);
           }
         }
-
         gl.drawArrays(
           gl.TRIANGLES,
           0,
           6
         );
-
         gl.bindFramebuffer(
           gl.FRAMEBUFFER,
           null
         );
       }
 
+
       //apply videos
       for (let i = 0; i < state.MAX_VIDEOS; i++) {
-
         const tex = state.videoTextures[i];
-
         if (!tex) continue;
-
         const unit =
           state.MAX_CHANNELS +
           state.MAX_AUDIOS +
           i;
-
         gl.activeTexture(gl.TEXTURE0 + unit);
-
         gl.bindTexture(gl.TEXTURE_2D, tex);
-
         const loc =
           cacheUniform(
             program,
             'iVideo' + i
           );
-
         if (loc !== null) {
-
           gl.uniform1i(loc, unit);
-
         }
       }
-
-
-
       // buffers
       // render ALL first
       gl.disable(gl.BLEND);
-
       for (let id of state.executionOrder) {
-
         if (buffers[id]) {
           drawToBuffer(buffers[id]);
-
-        }
-      }
-
-      // THEN swap ALL
-
-      for (let id of state.executionOrder) {
-
-        if (buffers[id]) {
-
           buffers[id].swap();
-
         }
       }
-
+      // THEN swap ALL
+      /*
+      for (let id of state.executionOrder) {
+        if (buffers[id]) {
+          buffers[id].swap();
+        }
+      }
+      */
       // Render final para a tela
       if (state.config.alpha) {
         gl.enable(gl.BLEND);
@@ -1694,67 +1553,50 @@ export const ShaderPlay = (() => {
         gl.disable(gl.BLEND);
       }
       // final
-
       gl.useProgram(program);
-
       applyCustomUniforms(program);
-
       gl.enableVertexAttribArray(state.positionAttributeLocation);
       gl.bindBuffer(gl.ARRAY_BUFFER, state.positionBuffer);
       gl.vertexAttribPointer(state.positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-
       gl.uniform3f(state.iResolutionLocation, size.width, size.height, 1);
       gl.uniform1f(state.iTimeLocation, time);
       gl.uniform1f(state.iTimeDeltaLocation, deltaTime);
       gl.uniform1i(state.iFrameLocation, state.frameCount - 1);
-
       const frameRate = deltaTime > 0 ? 1.0 / deltaTime : 0.0;
       gl.uniform1f(state.iFrameRateLocation, frameRate);
-
-    
       gl.uniform4f(
         state.iMouseLocation,
         mouse.x,
         mouse.y,
-
         mouse.isDown
           ? mouse.clickX
           : -1.0,
-
         mouse.justPressed
           ? -mouse.clickY
           : (
-              mouse.isDown
-                ? mouse.clickY
-                : -1.0
-            )
+            mouse.isDown
+              ? mouse.clickY
+              : -1.0
+          )
       );
-
-
       gl.uniform1f(
         state.iMousePressed,
         state.mouse.justPressed ? 1.0 : 0.0
       );
-
-
       gl.uniform4f(state.iDateLocation,
         now.getFullYear(), now.getMonth() + 1, now.getDate(), seconds
       );
-
       for (let i = 0; i < state.MAX_CHANNELS; i++) {
         let tex = null;
         if (buffers[i]) tex = buffers[i].read;
         else if (texStatic[i]) tex = texStatic[i];
-
         if (tex) {
           gl.activeTexture(gl.TEXTURE0 + i);
           gl.bindTexture(gl.TEXTURE_2D, tex);
           gl.uniform1i(state.iChannelLocations[i], i);
         }
       }
-
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-
       //draw background
       //if (text && frameCount % (config.frameSkip || 1) === 0) {
       //text.style.backgroundImage = `url(${canvas.toDataURL()})`;
@@ -1766,7 +1608,6 @@ export const ShaderPlay = (() => {
 
     function detectGLSLVersion(vertex, fragment) {
       if (!vertex || !fragment) return 0;
-
       const src = (vertex + "\n" + fragment)
         .replace(/\uFEFF/g, '')
         .replace(/\r/g, '');
@@ -1780,8 +1621,6 @@ export const ShaderPlay = (() => {
         //state.config.texture.magFilter = "NEAREST";
         return 3;
       }
-
-
       //defaults for GLS1 Buffer
       state.config.texture.internalFormat = "RGBA";
       state.config.texture.type = "UNSIGNED_BYTE";
@@ -1797,106 +1636,81 @@ export const ShaderPlay = (() => {
         Main: { code: "", line: -1 },
         images: {}
       };
-
-
       for (let i = 0; i < state.MAX_CHANNELS; i++) {
         sections["Buffer" + i] = { code: "", line: -1 };
       }
-
       const lines = fragmentSource.split("\n");
       let currentSection = null;
       let currentCode = [];
-
       for (let i = 0; i < lines.length; i++) {
         const rawLine = lines[i];
         const line = rawLine.trim();
-
         if (!line.startsWith("//")) {
           if (currentSection) currentCode.push(rawLine);
           continue;
         }
         const content = line.slice(2).trim(); // remove "//"
-
-
         // ✅ COMMON    
         if (/^Common$/i.test(content)) {
           if (currentSection && sections[currentSection]) {
             sections[currentSection].code = currentCode.join("\n").trim();
           }
-
           currentSection = "Common";
           sections.Common.line = i;
           currentCode = [];
           continue;
         }
-
-
         const channelMatch = content.match(/^iChannel(\d+)(?:\s*=\s*(.+))?$/i);
         if (channelMatch) {
           const id = parseInt(channelMatch[1]);
           const value = channelMatch[2];
-
           if (value) {
             sections.images[`iChannel${id}`] = value.trim();
           }
-
           if (currentSection && sections[currentSection]) {
             sections[currentSection].code = currentCode.join("\n").trim();
           }
-
           currentSection = "Buffer" + id;
           sections[currentSection].line = i;
           currentCode = [];
           continue;
         }
-
         if (/^Main$/i.test(content)) {
           if (currentSection && sections[currentSection]) {
             sections[currentSection].code = currentCode.join("\n").trim();
           }
-
           currentSection = "Main";
           sections.Main.line = i;
           currentCode = [];
           continue;
         }
-
         if (currentSection) {
           currentCode.push(rawLine);
         }
       }
-
       if (currentSection && sections[currentSection]) {
         sections[currentSection].code = currentCode.join("\n").trim();
       }
-
       return sections;
     }
 
 
-
     function createFBO(width, height, options = {}) {
       let localconfig = deepClone(state.config);
-      deepMerge(localconfig, options);
+      deepMerge(localconfig, options);      
       function glValue(gl, value) {
         return typeof value === "string" ? gl[value] : value;
       }
       const gl = state.gl;
-
       const useFloat = localconfig.texture.type === "FLOAT";
-
       // ✅ ativa extensão se for float
       if (useFloat) {
         gl.getExtension('EXT_color_buffer_float');
       }
-
       function createTexture(initialData = null) {
-
         const tex = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, tex);
-
         if (useFloat) {
-          // ✅ FLOAT REAL
           gl.texImage2D(
             glValue(gl, localconfig.texture.target),
             glValue(gl, localconfig.texture.level),
@@ -1909,7 +1723,6 @@ export const ShaderPlay = (() => {
             null
           );
         } else {
-          // ✅ modo antigo (byte)
           if (!initialData) {
             initialData = new Uint8Array(width * height * 4);
             for (let i = 0; i < initialData.length; i += 4) {
@@ -1919,7 +1732,6 @@ export const ShaderPlay = (() => {
               initialData[i + 3] = 255;
             }
           }
-
           gl.texImage2D(
             glValue(gl, localconfig.texture.target),
             glValue(gl, localconfig.texture.level),
@@ -1932,40 +1744,48 @@ export const ShaderPlay = (() => {
             initialData
           );
         }
-
-
+        // filtros
+        if (localconfig.texture.mipmaps) {
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_MIN_FILTER,
+            gl.LINEAR_MIPMAP_LINEAR
+          );
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_MAG_FILTER,
+            gl.LINEAR
+          );
+        } else {
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_MIN_FILTER,
+            glValue(gl, localconfig.texture.minFilter)
+          );
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_MAG_FILTER,
+            glValue(gl, localconfig.texture.magFilter)
+          );
+        }
         gl.texParameteri(
-          glValue(gl, localconfig.texture.target),
-          gl.TEXTURE_MIN_FILTER,
-          glValue(gl, localconfig.texture.minFilter)
-        );
-
-        gl.texParameteri(
-          glValue(gl, localconfig.texture.target),
-          gl.TEXTURE_MAG_FILTER,
-          glValue(gl, localconfig.texture.magFilter)
-        );
-
-        gl.texParameteri(
-          glValue(gl, localconfig.texture.target),
+          gl.TEXTURE_2D,
           gl.TEXTURE_WRAP_S,
           glValue(gl, localconfig.texture.wrapS)
         );
-
         gl.texParameteri(
-          glValue(gl, localconfig.texture.target),
+          gl.TEXTURE_2D,
           gl.TEXTURE_WRAP_T,
           glValue(gl, localconfig.texture.wrapT)
         );
-
+        if (localconfig.texture.mipmaps) {
+          gl.generateMipmap(gl.TEXTURE_2D);
+        }
         return tex;
       }
-
       function createFramebuffer(tex) {
-
         const fbo = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-
         gl.framebufferTexture2D(
           gl.FRAMEBUFFER,
           gl.COLOR_ATTACHMENT0,
@@ -1973,22 +1793,17 @@ export const ShaderPlay = (() => {
           tex,
           0
         );
-
         // ✅ limpa só no modo byte (float começa vazio)
         if (!useFloat) {
           gl.viewport(0, 0, width, height);
           gl.clearColor(0, 0, 0, 1);
           gl.clear(gl.COLOR_BUFFER_BIT);
         }
-
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
         return fbo;
       }
-
       const tex0 = createTexture();
       const tex1 = createTexture();
-
       const fbo0 = createFramebuffer(tex0);
       const fbo1 = createFramebuffer(tex1);
       let fixedwidth = 0;
@@ -2001,7 +1816,6 @@ export const ShaderPlay = (() => {
         localconfig,
         textures: [tex0, tex1],
         framebuffers: [fbo0, fbo1],
-
         index: 0,
         setSize(w, h, options = {}) {
           let innerOptions = deepClone(state.config);
@@ -2010,33 +1824,37 @@ export const ShaderPlay = (() => {
           this.localconfig = innerOptions;
           this.width = w;
           this.height = h;
-
           this.textures = newFBO.textures;
           this.framebuffers = newFBO.framebuffers;
-
           this.fixedwidth = w;
           this.fixedheight = h;
         },
         get read() {
           return this.textures[this.index];
         },
-
         get write() {
           return this.textures[1 - this.index];
         },
-
         get readFBO() {
           return this.framebuffers[this.index];
         },
-
         get writeFBO() {
           return this.framebuffers[1 - this.index];
         },
-
         swap() {
+          if (this.localconfig.texture.mipmaps) {
+
+            
+            gl.bindTexture(
+              gl.TEXTURE_2D,
+              this.write
+            );
+            gl.generateMipmap(
+              gl.TEXTURE_2D
+            );
+          }
           this.index = 1 - this.index;
         },
-
         destroy() {
           this.textures.forEach(t => gl.deleteTexture(t));
           this.framebuffers.forEach(f => gl.deleteFramebuffer(f));
@@ -2044,89 +1862,185 @@ export const ShaderPlay = (() => {
       };
     }
 
-    function loadTextureAsync(url, num) {
+
+    function loadTextureAsync(url, num, options = {}) {
       const gl = state.gl;
+      const filter =
+        options.filter ??
+        state.config.texture.minFilter ??
+        "NEAREST";
+      const mipmaps =
+        options.mipmaps ??
+        state.config.texture.mipmaps ??
+        false;
       return new Promise((resolve, reject) => {
         const texture = gl.createTexture();
         const image = new Image();
         image.crossOrigin = "anonymous";
         image.onload = () => {
           gl.bindTexture(gl.TEXTURE_2D, texture);
-          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-          const isPOT = (v) => (v & (v - 1)) === 0;
-          if (isPOT(image.width) && isPOT(image.height)) {
-            gl.generateMipmap(gl.TEXTURE_2D);
+          gl.pixelStorei(
+            gl.UNPACK_FLIP_Y_WEBGL,
+            true
+          );
+          gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            image
+          );
+          const isPOT = v => (v & (v - 1)) === 0;
+          const pot =
+            isPOT(image.width) &&
+            isPOT(image.height);
+          const glFilter =
+            filter === "LINEAR"
+              ? gl.LINEAR
+              : gl.NEAREST;
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_WRAP_S,
+            gl.CLAMP_TO_EDGE
+          );
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_WRAP_T,
+            gl.CLAMP_TO_EDGE
+          );
+          if (mipmaps && pot) {
+            gl.generateMipmap(
+              gl.TEXTURE_2D
+            );
+            gl.texParameteri(
+              gl.TEXTURE_2D,
+              gl.TEXTURE_MIN_FILTER,
+              filter === "LINEAR"
+                ? gl.LINEAR_MIPMAP_LINEAR
+                : gl.NEAREST_MIPMAP_NEAREST
+            );
+            gl.texParameteri(
+              gl.TEXTURE_2D,
+              gl.TEXTURE_MAG_FILTER,
+              glFilter
+            );
           } else {
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); // melhor que NEAREST
+            gl.texParameteri(
+              gl.TEXTURE_2D,
+              gl.TEXTURE_MIN_FILTER,
+              glFilter
+            );
+            gl.texParameteri(
+              gl.TEXTURE_2D,
+              gl.TEXTURE_MAG_FILTER,
+              glFilter
+            );
           }
-          resolve(texture); // ✅ aqui termina
+          resolve(texture);
         };
         image.onerror = reject;
         image.src = url;
       });
     }
 
-    function loadTexture(url, num) { const gl = state.gl; const texture = gl.createTexture(); const image = new Image(); image.crossOrigin = "anonymous"; image.src = url; image.onload = () => { gl.bindTexture(gl.TEXTURE_2D, texture); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image); const isPOT = (v) => (v & (v - 1)) === 0; if (isPOT(image.width) && isPOT(image.height)) { gl.generateMipmap(gl.TEXTURE_2D) } else { gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST) } }; return texture }
+
+
+    function loadTexture(url, num) {
+      const gl = state.gl;
+      const texture = gl.createTexture();
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      image.onload = () => {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RGBA,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          image
+        );
+        const isPOT = v => (v & (v - 1)) === 0;
+        if (isPOT(image.width) && isPOT(image.height)) {
+          gl.generateMipmap(gl.TEXTURE_2D);
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_MIN_FILTER,
+            gl.LINEAR_MIPMAP_LINEAR
+          );
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_MAG_FILTER,
+            gl.LINEAR
+          );
+        } else {
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_WRAP_S,
+            gl.CLAMP_TO_EDGE
+          );
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_WRAP_T,
+            gl.CLAMP_TO_EDGE
+          );
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_MIN_FILTER,
+            gl.NEAREST
+          );
+          gl.texParameteri(
+            gl.TEXTURE_2D,
+            gl.TEXTURE_MAG_FILTER,
+            gl.NEAREST
+          );
+        }
+      };
+      image.src = url;
+      return texture;
+    }
 
 
     function ensureGLContext(version) {
       if (version == 0) return;
       const canvas = state.canvas;
       const needWebGL2 = version === 3;
-
       const hasContext = !!state.gl;
       const isWebGL2 = hasContext && (state.gl instanceof WebGL2RenderingContext);
-
       // ✅ já está correto → não recria
       if (hasContext && (needWebGL2 === isWebGL2)) return;
-
       // ✅ NÃO use loseContext aqui (bug que causava tudo)
       // ext?.loseContext(); ❌ REMOVIDO
-
       // ✅ cria novo contexto
       let gl = null;
-
       if (needWebGL2) {
         gl = canvas.getContext("webgl2", { alpha: state.config.alpha, antialias: true, premultipliedAlpha: false });
       }
-
       if (!gl) {
         gl =
           canvas.getContext("webgl", { alpha: state.config.alpha, antialias: true, premultipliedAlpha: false }) ||
           canvas.getContext("experimental-webgl", { alpha: state.config.alpha, antialias: true, premultipliedAlpha: false });
       }
-
       if (!gl) {
         console.error("WebGL não suportado");
         state.gl = null;
         return;
       }
-
       if (state.gl) {
         state.gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         state.gl.useProgram(null);
       }
-
       // ✅ atualiza state de forma consistente
       state.gl = gl;
-
       // ✅ sincroniza versão REAL (fundamental!)
       //state.webGlversion = (gl instanceof WebGL2RenderingContext) ? 3 : 1;
-
       // ✅ limpa estado antigo (evita resíduos do contexto anterior)
-
-
-
       gl.disable(gl.BLEND);
-
-
       // ✅ recria buffer padrão SEM resíduos
       state.positionBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, state.positionBuffer);
-
       const positions = new Float32Array([
         -1, -1,
         1, -1,
@@ -2135,15 +2049,12 @@ export const ShaderPlay = (() => {
         1, -1,
         1, 1
       ]);
-
       gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-
-
     }
+
 
     function continueInit() {
       bindEvents();
-
       /*const canvas = state.canvas;
       state.gl = canvas.getContext("webgl", { alpha: state.config.alpha }) || canvas.getContext("experimental-webgl", { alpha: state.config.alpha });
       const gl = state.gl;
@@ -2165,15 +2076,12 @@ export const ShaderPlay = (() => {
 
     function init(options) {
       //console.log('init');
-
-
       if (!state.container) state.container = state.root.getElementById("myContainer");
       if (!state.canvas) {
         state.canvas = state.root.createElement('canvas');
         state.container.appendChild(state.canvas);
         if (!state.text) state.canvas.style.display = 'block';
       }
-
       if (state.observerCanvas) {
         state.observerCanvas.disconnect();
       }
@@ -2183,22 +2091,15 @@ export const ShaderPlay = (() => {
       removeGlobalEvent(window, "scroll", scrolPage);
       addGlobalEvent(window, "resize", resizeCanvasBounce);
       addGlobalEvent(window, "scroll", scrolPage);
-
-
       state.webGlversion = detectGLSLVersion(state.vertexCode, state.fragmentCode);
       deepMerge(state.config, options);
       //console.log('v', state.webGlversion);
       ensureGLContext(state.webGlversion);
-
       if (state.alreadyInitied) {
         sampleExec(state.entryExample);
         return
       }
-
       state.alreadyInitied = true;
-
-
-
       //canvas.width=container.clientWidth;
       //canvas.height=200;       
       //requestAnimationFrame(()=>{requestAnimationFrame(()=>{continueInit()})})      
@@ -2206,6 +2107,7 @@ export const ShaderPlay = (() => {
         continueInit();
       }, 500);
     }
+
 
     function sampleExec(sampleNumber) {
       const codesample = state.sampleCodes["A" + sampleNumber];
@@ -2257,7 +2159,6 @@ export const ShaderPlay = (() => {
         gl.UNPACK_FLIP_Y_WEBGL,
         true
       );
-
       // inicializa textura válida
       gl.texImage2D(
         gl.TEXTURE_2D,
@@ -2270,11 +2171,10 @@ export const ShaderPlay = (() => {
         gl.UNSIGNED_BYTE,
         new Uint8Array([0, 0, 0, 255])
       );
-
       gl.bindTexture(gl.TEXTURE_2D, null);
-
       return tex;
     }
+
 
     function prepareVideoElement(input, id) {
       let video;
@@ -2356,9 +2256,7 @@ export const ShaderPlay = (() => {
     function createFFTTexture(gl, size) {
       const tex = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, tex);
-
       let internalFormat, format;
-
       if (state.webGlversion == 3) {
         internalFormat = gl.R8;     // formato interno moderno
         format = gl.RED;            // canal único
@@ -2366,7 +2264,6 @@ export const ShaderPlay = (() => {
         internalFormat = gl.LUMINANCE;
         format = gl.LUMINANCE;
       }
-
       gl.texImage2D(
         gl.TEXTURE_2D,
         0,
@@ -2378,65 +2275,51 @@ export const ShaderPlay = (() => {
         gl.UNSIGNED_BYTE,
         null
       );
-
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
       return tex;
     }
 
+
     function createAudioFFT(input, ctx, index) {
       let src;
-
       // 📦 mapa global pra não duplicar MediaElementSource
       if (!state.audioSources) state.audioSources = new Map();
-
       // 🎯 caso 1: AudioNode já pronto
       if (input instanceof AudioNode) {
         if (!ctx) {
           throw new Error("AudioNode requer ctx");
         }
-
         // valida contexto
         if (input.context !== ctx) {
           throw new Error("AudioNode pertence a outro AudioContext");
         }
-
         src = input;
       }
-
       // 🎯 caso 2: HTMLMediaElement
       else if (input instanceof HTMLMediaElement) {
         // se ctx não vier, cria um isolado
         if (!ctx) {
           ctx = new (window.AudioContext || window.webkitAudioContext)();
         }
-
         src = state.audioSources.get(input);
-
         if (!src) {
           src = ctx.createMediaElementSource(input);
           state.audioSources.set(input, src);
-
           // conecta ao destino uma única vez
           src.connect(ctx.destination);
         }
       }
-
       else {
         throw new Error("input inválido");
       }
-
       // 🎧 analyser
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 512;
-
       src.connect(analyser);
-
       const data = new Uint8Array(analyser.frequencyBinCount);
-
       state.audioFFT[index] = {
         ctx,
         analyser,
@@ -2445,9 +2328,9 @@ export const ShaderPlay = (() => {
         lastEnergy: 0,
         history: []
       };
-
       state.audioTextures[index] = createFFTTexture(state.gl, data.length);
     }
+
 
     //################ FUNCTIONS #########    
 
@@ -2461,7 +2344,6 @@ export const ShaderPlay = (() => {
         console.error('state.canvas not found');
         return;
       }
-
       /*
       const lastState=state.webGlversion;
       const newState = detectGLSLVersion(state.vertexCode, state.fragmentCode);                        
@@ -2472,25 +2354,18 @@ export const ShaderPlay = (() => {
         return;
       }
         */
-
       if (!state.gl) return;
       if (!state.videosProcessed) processPendingVideos();
       state.usedChannels = [];
-
       const gl = state.gl;
-
       var buffers = state.buffers;
       var texStatic = state.texStatic;
-
       if (!vertexSource || !fragmentSource) return;
       vertexSource = vertexSource.replaceAll('\\n', '\n');
       fragmentSource = fragmentSource.replaceAll('\\n', '\n');
-
-
       if (state.isEditorMode) {
         const vertArea = state.root.getElementById('vertext');
         const fragArea = state.root.getElementById('fragmentt');
-
         if (state.codevertex) {
           state.codevertex.setValue(vertexSource)
         } else {
@@ -2504,7 +2379,6 @@ export const ShaderPlay = (() => {
           });
           state.codevertex.setSize("100%", "100%");
         }
-
         if (state.codefrag) {
           state.codefrag.setValue(fragmentSource)
         } else {
@@ -2518,100 +2392,72 @@ export const ShaderPlay = (() => {
           });
           state.codefrag.setSize("100%", "100%");
         }
-
         clearErrors(state.codevertex);
         clearErrors(state.codefrag);
       } else {
         if (!state.codevertex) {
           state.codevertex = createFakeEditor(vertexSource);
         } else state.codevertex.setValue(vertexSource);
-
         if (!state.codefrag) {
           state.codefrag = createFakeEditor(fragmentSource);
         } else state.codefrag.setValue(fragmentSource);
       }
-
       const parsed = parseShaderSections(fragmentSource);
-
-
-
       // limpa buffers antigos
       if (buffers) {
         for (let i = 0; i < buffers.length; i++) {
           if (buffers[i] && buffers[i].destroy) buffers[i].destroy();
         }
       }
-
-
       buffers = [];
       texStatic = [];
-
       for (let i = 0; i < state.MAX_CHANNELS; i++) {
         const key = "Buffer" + i;
-
         if (parsed[key] && parsed[key].code) {
-          if(typeof(state.config[`iChannel${i}`])!=="undefined" && 
-             typeof(state.config[`iChannel${i}`].width)!=="undefined" && 
-             typeof(state.config[`iChannel${i}`].height)!=="undefined"){
-              const nwi=state.config[`iChannel${i}`].width;
-              const nhe=state.config[`iChannel${i}`].height;
-              buffers[i] = createFBO(nwi, nhe);
-              buffers[i].fixedwidth = nwi;
-              buffers[i].fixedheight = nhe;
-             }else{
-              buffers[i] = createFBO(measuretCanvas().width, measuretCanvas().height);
-             }          
+          if (typeof (state.config[`iChannel${i}`]) !== "undefined" &&
+            typeof (state.config[`iChannel${i}`].width) !== "undefined" &&
+            typeof (state.config[`iChannel${i}`].height) !== "undefined") {
+            const nwi = state.config[`iChannel${i}`].width;
+            const nhe = state.config[`iChannel${i}`].height;
+            buffers[i] = createFBO(nwi, nhe);
+            buffers[i].fixedwidth = nwi;
+            buffers[i].fixedheight = nhe;
+          } else {
+            buffers[i] = createFBO(measuretCanvas().width, measuretCanvas().height);
+          }
         } else {
           buffers[i] = null;
         }
-
-        if (parsed.images["iChannel" + i]) {          
+        if (parsed.images["iChannel" + i]) {
           texStatic[i] = loadTexture(parsed.images["iChannel" + i], i);
         } else {
           texStatic[i] = null;
         }
       }
-
-
       state.buffers = buffers;
       state.texStatic = texStatic;
-
       detectDependencies(parsed);
       buildExecutionOrder();
-
-
       if (!validateChannels(parsed)) {
         state.program = null;
         return;
       }
-
-
-
       const vs = compileShader(gl, vertexSource, gl.VERTEX_SHADER, 0);
-
       if (!vs) {
         state.program = null;
         return;
       }
-
       let fragNotCompiled = false;
-
-
       const compileAndSet = (passCode, target, lineOffset, commonCode) => {
-
         const source = `
 #line 1 0
 ${commonCode}
-
 #line ${lineOffset} 1
 ${passCode}
 `;
-
         const fs = compileShader(gl, source, gl.FRAGMENT_SHADER, 0);
-
         if (fs) {
           const newProgram = createProgram(gl, vs, fs);
-
           if (newProgram) {
             target.program = newProgram;
           } else {
@@ -2621,87 +2467,67 @@ ${passCode}
           fragNotCompiled = true;
         }
       };
-
       for (let i = 0; i < state.MAX_CHANNELS; i++) {
         if (buffers[i]) buffers[i].program = {};
       }
-
       const mainProgram = {};
       const commonCode = parsed.Common?.code || "";
-
       for (let i = 0; i < state.MAX_CHANNELS; i++) {
         const key = "Buffer" + i;
-
         if (parsed[key] && parsed[key].code) {
-
           compileAndSet(parsed[key].code, buffers[i], parsed[key].line, commonCode);
-
           if (fragNotCompiled) {
             state.program = null;
             return;
           }
         }
       }
-
       if (parsed.Main.code) {
         compileAndSet(parsed.Main.code, mainProgram, parsed.Main.line, commonCode);
-
-
         if (fragNotCompiled) {
           state.program = null;
           return;
         }
       }
-
       // ✅ SHADER COMPILOU COM SUCESSO
       state.vertexCode = vertexSource;
       state.fragmentCode = fragmentSource;
       state.program = mainProgram.program;
-
       // ✅ RESOLVE A PROMISE AQUI 🔥
       if (state.programResolver) {
         state.programResolver(state.program);
         state.programResolver = null;
       }
-
       if (state.errorDiv) {
         state.errorDiv.textContent = 'SUCESS';
         state.errorDiv.style.color = 'green';
         showError();
       }
-
       const program = state.program;
-
-      if(state.isEditorMode){
+      if (state.isEditorMode) {
         //COPY current custom uniforms values to editor
-        state._uniformCache=ShaderPlayEditor.editor.shared.uniformCache;
-        state.customUniforms=ShaderPlayEditor.editor.shared.customUniforms;          
+        state._uniformCache = ShaderPlayEditor.editor.shared.uniformCache;
+        state.customUniforms = ShaderPlayEditor.editor.shared.customUniforms;
       }
-
-
       state.sucessCodes = {
         vert: vertexSource,
         frag: fragmentSource
       };
       state.frameCount = 0;
-
       state.positionAttributeLocation = gl.getAttribLocation(program, 'position');
       state.iResolutionLocation = gl.getUniformLocation(program, 'iResolution');
       state.iTimeLocation = gl.getUniformLocation(program, 'iTime');
       state.iTimeDeltaLocation = gl.getUniformLocation(program, 'iTimeDelta');
       state.iFrameLocation = gl.getUniformLocation(program, 'iFrame');
       state.iFrameRateLocation = gl.getUniformLocation(program, 'iFrameRate');
-      state.iMouseLocation = gl.getUniformLocation(program, 'iMouse'); 
-      state.iMousePressed = gl.getUniformLocation(program, 'iMousePressed'); 
+      state.iMouseLocation = gl.getUniformLocation(program, 'iMouse');
+      state.iMousePressed = gl.getUniformLocation(program, 'iMousePressed');
       state.iDateLocation = gl.getUniformLocation(program, 'iDate');
-
       state.iChannelLocations = [];
-
       for (let i = 0; i < state.MAX_CHANNELS; i++) {
         state.iChannelLocations[i] =
           gl.getUniformLocation(program, 'iChannel' + i);
       }
-
       /*for (let key in state.customUniforms) {
         applyUniform(program, key, state.customUniforms[key]);
       }*/
@@ -2714,70 +2540,54 @@ ${passCode}
       const el = (typeof element === "string")
         ? state.root.getElementById(element)
         : element;
-
       if (!el) return null;
-
       if (el instanceof HTMLCanvasElement) {
         state.canvas = el;
-
         const resize = () => {
           const rect = state.canvas.getBoundingClientRect();
           state.canvas.width = measuretCanvas().width;
           state.canvas.height = measuretCanvas().height;
           resizeCanvasBounce();
         };
-
         resize();
-
         const observer = new ResizeObserver(resize);
         observer.observe(state.canvas);
-
       } else {
         const voidElements = [
           "IMG", "INPUT", "BR", "HR", "META", "LINK", "AREA", "BASE", "COL", "EMBED", "SOURCE", "TRACK", "WBR"
         ];
-
         if (voidElements.includes(el.tagName)) {
           console.warn("Element not accept background:", el.tagName);
           return null;
         }
-
         state.canvas = state.root.createElement("canvas");
-
         const style = getComputedStyle(el);
         if (style.position === "static") {
           el.style.position = "relative";
         }
-
         state.canvas.style.display = "block";
         state.canvas.style.inset = "0";
         state.canvas.style.width = "100%";
         state.canvas.style.height = "100%";
         state.canvas.style.pointerEvents = "all";
         state.canvas.style.zIndex = "0";
-
         el.prepend(state.canvas);
-
         for (const child of el.children) {
           if (child !== state.canvas) {
             child.style.position = child.style.position || "relative";
             child.style.zIndex = "1";
           }
         }
-
         const resize = () => {
           const rect = el.getBoundingClientRect();
           state.canvas.width = measuretCanvas().width;
           state.canvas.height = measuretCanvas().height;
           resizeCanvasBounce();
         };
-
         resize();
-
         const observerel = new ResizeObserver(resize);
         observerel.observe(el);
       }
-
       state.isEditorMode = false;
       state.entryExample = '-1';
       state.vertexCode = vertexCode.replaceAll('\\n', '\n');
@@ -2785,13 +2595,9 @@ ${passCode}
       state.sampleCodes["A" + state.entryExample] = { vert: vertexCode, frag: fragmentCode };
       state.canvas.style.color = "transparent";
       state.canvas.style.webkitTextFillColor = "transparent";
-
       if (!state.alreadyInitied) {
         init(options);
       }
-
-
-
       //wait program
       state.programPromise = new Promise((resolve) => { state.programResolver = resolve; });
       const timeout = 10000;
@@ -2806,9 +2612,9 @@ ${passCode}
         return null;
       }
       if (!program) return null;
-
       return state.canvas;
     }
+
 
     async function ShaderTextPath(element, vertexCode, fragmentCode, options = { glyph: true, letterSpacing: 0, frameSkip: 0, precision: "highp", alpha: false }) {
       const S = "http://www.w3.org/2000/svg";
@@ -2817,10 +2623,8 @@ ${passCode}
       state.lastTextContent = "";
       state.text = el;
       state.isEditorMode = false;
-
       let txt = (el.textContent || "").replace(/\u200B/g, "").replace(/\r|\n|\t/g, "").trim();
       if (!txt.length) return;
-
       state.container = state.root.body;
       state.canvas = state.root.createElement("canvas");
       const canvas = state.canvas;
@@ -2828,13 +2632,11 @@ ${passCode}
       canvas.style.pointerEvents = "none";
       canvas.style.zIndex = 9999;
       state.root.body.appendChild(canvas);
-
       state.svg = state.root.createElementNS(S, "svg");
       const svg = state.svg;
       svg.style.position = "fixed";
       svg.style.pointerEvents = "none";
       svg.style.zIndex = 9999;
-
       const clipId = "clip_" + Math.random().toString(36).slice(2);
       const defs = state.root.createElementNS(S, "defs");
       const clip = state.root.createElementNS(S, "clipPath");
@@ -2843,12 +2645,9 @@ ${passCode}
       defs.appendChild(clip);
       svg.appendChild(defs);
       state.root.body.appendChild(svg);
-
       const cs = getComputedStyle(el);
-
       if (state.root.fonts && state.root.fonts.ready) await state.root.fonts.ready;
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
       var letters = [];
       for (let i = 0; i < txt.length; i++) {
         const ch = txt[i];
@@ -2864,24 +2663,18 @@ ${passCode}
         clip.appendChild(t);
         letters.push(t);
       }
-
       canvas.style.clipPath = `url(#${clipId})`;
       canvas.style.webkitClipPath = `url(#${clipId})`;
-
       el.style.color = "transparent";
       el.style.webkitTextFillColor = "transparent";
       //el.style.userSelect="none";
       //el.style.webkitUserSelect="none";
       el.style.pointerEvents = "none";
-
       if (!state.alreadyInitied) init(options);
       else setShader(vertexCode, fragmentCode);
-
       state.glyphs = letters;
       syncText();
       resizeCanvasBounce();
-
-
       if (state.observerElement) { state.observerElement.disconnect(); }
       state.observerElement = new MutationObserver(resizeCanvasBounce);
       state.observerElement.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
@@ -2889,11 +2682,9 @@ ${passCode}
       removeGlobalEvent(window, "scroll", scrolPage);
       addGlobalEvent(window, "resize", resizeCanvasBounce);
       addGlobalEvent(window, "scroll", scrolPage);
-
       if (state.root.fonts && state.root.fonts.addEventListener) {
         addGlobalEvent(state.root.fonts, "loadingdone", resizeCanvasBounce);
       }
-
       //wait program
       state.programPromise = new Promise((resolve) => { state.programResolver = resolve; });
       const timeout = 10000;
@@ -2908,7 +2699,6 @@ ${passCode}
         return null;
       }
       if (!program) return null;
-
       acceptClicks();
       return letters;
     }
@@ -2918,10 +2708,7 @@ ${passCode}
       const el = (typeof element === "string")
         ? state.root.getElementById(element)
         : element;
-
       if (!el) return;
-
-
       vertexCode = vertexCode.replaceAll('\\n', '\n');
       fragmentCode = fragmentCode.replaceAll('\\n', '\n');
       state.entryExample = '-1';
@@ -2931,15 +2718,11 @@ ${passCode}
       };
       state.vertexCode = vertexCode;
       state.fragmentCode = fragmentCode;
-
-
       if (options.glyph) {
         return await ShaderTextPath(element, vertexCode, fragmentCode, options);
       }
       state.text = el;
       state.isEditorMode = false;
-
-
       // 🔥 canvas overlay GLOBAL
       state.container = state.root.body;
       state.canvas = state.root.createElement("canvas");
@@ -2947,44 +2730,33 @@ ${passCode}
       canvas.style.position = "fixed";
       canvas.style.pointerEvents = "none";
       canvas.style.zIndex = 9999;
-
       state.root.body.appendChild(canvas);
-
       // 🔥 SVG overlay GLOBAL
       state.svg = state.root.createElementNS("http://www.w3.org/2000/svg", "svg");
       const svg = state.svg;
       svg.style.position = "fixed";
       svg.style.pointerEvents = "all";
       svg.style.zIndex = 9999;
-
       const clipId = "clip_" + Math.random().toString(36).slice(2);
-
       const clip = state.root.createElementNS("http://www.w3.org/2000/svg", "clipPath");
       clip.setAttribute("id", clipId);
-
       state.textNode = state.root.createElementNS("http://www.w3.org/2000/svg", "text");
-
       clip.appendChild(state.textNode);
       svg.appendChild(clip);
-
       state.root.body.appendChild(svg);
-
       canvas.style.clipPath = `url(#${clipId})`;
       canvas.style.webkitClipPath = `url(#${clipId})`;
-
       // 🔥 esconder texto original (sem quebrar layout)
       el.style.color = "transparent";
       el.style.webkitTextFillColor = "transparent";
       //el.style.userSelect="none";
       //el.style.webkitUserSelect="none";
       el.style.pointerEvents = "none";
-
       if (!state.alreadyInitied) {
         init(options);
       } else {
         setShader(vertexCode, fragmentCode);
       }
-
       //resizeCanvas();
       if (state.observerElement) { state.observerElement.disconnect(); }
       state.observerElement = new MutationObserver(resizeCanvasBounce);
@@ -2993,8 +2765,6 @@ ${passCode}
       removeGlobalEvent(window, "scroll", scrolPage);
       addGlobalEvent(window, "resize", resizeCanvasBounce);
       addGlobalEvent(window, "scroll", scrolPage);
-
-
       //wait program
       state.programPromise = new Promise((resolve) => { state.programResolver = resolve; });
       const timeout = 10000;
@@ -3009,10 +2779,10 @@ ${passCode}
         return null;
       }
       if (!program) return null;
-
       acceptClicks();
       return svg;
     }
+
 
     async function convertToGlyphs() {
       // 1. garantir opentype carregado
@@ -3127,26 +2897,39 @@ ${passCode}
       return state.finalpath;
     }
 
-    async function uniform(name, value, type = "float") {
 
+    async function uniform(name, value, type = "float") {
       // ================= iChannel =================
       if (name.startsWith("iChannel")) {
         const index = parseInt(name.replace("iChannel", ""));
         if (isNaN(index)) return false;
-
         const gl = state.gl;
         if (!gl) return false;
-
         if (!state._texSource) state._texSource = {};
-
         let texture = null;
-
         // STRING → URL
         if (typeof value === "string") {
-          texture = await loadTextureAsync(value, index);
+          let textureOptions = {
+            filter: "NEAREST",
+            mipmaps: false
+          };
+          if (
+            type &&
+            typeof type === "object" &&
+            !Array.isArray(type)
+          ) {
+            textureOptions = {
+              ...textureOptions,
+              ...type
+            };
+          }
+          texture = await loadTextureAsync(
+            value,
+            index,
+            textureOptions
+          );
           state._texSource[index] = null;
         }
-
         // IMAGE / CANVAS
         else if (
           value instanceof HTMLImageElement ||
@@ -3154,16 +2937,13 @@ ${passCode}
         ) {
           texture = gl.createTexture();
           gl.bindTexture(gl.TEXTURE_2D, texture);
-
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
           if (value instanceof HTMLImageElement && !value.complete) {
             await new Promise(resolve => value.onload = resolve);
           }
-
           gl.texImage2D(
             gl.TEXTURE_2D,
             0,
@@ -3172,55 +2952,56 @@ ${passCode}
             gl.UNSIGNED_BYTE,
             value
           );
-
           state._texSource[index] = value;
         }
         else {
           console.warn("Invalid iChannel value:", value);
           return false;
         }
-
         if (texture) {
           state.texStatic[index] = texture;
         }
-
         return true;
       }
-
       // ================= NORMAL =================
-
-      if (typeof value === "undefined") return state.lastUniforms[name];
-
+      if (typeof value === "undefined")
+        return state.lastUniforms[name];
       const old = state.customUniforms[name];
-
       let same = false;
-
       if (old) {
         if (
-          Array.isArray(value) ||
           value instanceof Float32Array ||
           value instanceof Int32Array
         ) {
+          // TypedArrays são reutilizados e mudam internamente,
+          // então sempre considere alterados.
+          same = false;
+        } else if (Array.isArray(value)) {
           same = arraysEqual(old.value, value);
         } else {
           same = old.value === value;
         }
       }
-
       if (!same) {
-        state._uniformVersionCounter = (state._uniformVersionCounter || 0) + 1;
-
+        state._uniformVersionCounter =
+          (state._uniformVersionCounter || 0) + 1;
         state.customUniforms[name] = {
-          value,
+          value:
+            value instanceof Float32Array
+              ? new Float32Array(value)
+              : value instanceof Int32Array
+                ? new Int32Array(value)
+                : Array.isArray(value)
+                  ? [...value]
+                  : value,
           type: type || "float",
           version: state._uniformVersionCounter
         };
-
         state.lastUniforms[name] = value;
       }
-
       return !same;
     }
+
 
 
 
@@ -3571,7 +3352,12 @@ ${passCode}
       close: closeEditor
     };
 
-
+state.mouse.x = 0;
+state.mouse.y = 0;
+state.mouse.clickX = 0;
+state.mouse.clickY = 0;
+state.mouse.isDown = false;
+state.mouse.justPressed = false;
     state.root = document;
 
     if (!isEditor) {

@@ -1,0 +1,389 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <title>Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('./roboto-black.ttf') format('truetype');
+            font-weight: 900;
+            font-style: normal;
+            font-display: block;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: "Inter", sans-serif;
+            background-color: rgb(226, 21, 21);
+        }
+
+        .fontStyle {
+            font-size: 8vw;
+            /*font-family: 'Roboto', sans-serif;*/
+            text-align: center;
+            width: 512px;
+            height: 288px;
+            display: block;
+            border: 0px;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="button" onclick="ShaderPlayEditor.show();" value="Editor"
+        style="padding: 6px; margin: 5px; background-color: aqua;">
+
+    <div id="shaderText" class="fontStyle">
+    </div>
+
+
+
+
+    <script type="module">        
+        import { ShaderPlay } from "https://didisoftwares.ddns.net/10/shaderplay.js";
+        const shader = ShaderPlay.create();
+        //window.SS = shader;
+
+        //shader.setResolution(512, 300);
+        shader.setResolution(512, 288);        
+
+        const common = `
+#version 300 es         
+
+//Common
+/*
+Created by Tonny Espeset, 2026
+https://www.shadertoy.com/view/7Xy3WW
+
+Diamond Dust Mk II
+
+Feel free to use this code, but please keep this credit and link.
+
+Check my other shaders at
+
+https://www.shadertoy.com/user/Espeset
+*/
+
+uniform int uFrameupdate;
+const int MAXAGE=200;
+const float FLOW_HOLD=10.;
+const float FLOW_MORPH=10.;
+const float FLOW_SPEED=1.;
+const float COLOR_FADE=45.;
+const float WORD_SIZE=1.;
+const float PI=3.14159265;
+const float TAU=PI*2.;
+#define NO_UNROLL min(iFrame,0)
+const vec3 EYE=vec3(1.18042237,1.29199219,-1.99625719);
+const vec3 CAM_RIGHT=vec3(.83681515,.00101071,.54745445);
+const vec3 CAM_UP=vec3(-.32270351,.80872536,.49171886);
+const vec3 CAM_FORWARD=vec3(-.44223273,-.58815312,.67708296);
+const float CAM_ZOOM=2.41421342;
+const float SHEET_Y=.04;
+const vec2 FLOW_RIGHT=vec2(.83682,.54745);
+const vec2 FLOW_AWAY=vec2(-.54686,.83723);
+const vec2 FLOW_CENTER=vec2(.24,-.55);
+const float LETTER_CELL=.34;const float BASELINE=.21875;const float CAP_HEIGHT=.59375;const float REVEAL=.4;const float RELEASE=1.6;const vec3 WORD_COLORS[5]=vec3[5](vec3(1.,.46,.065),vec3(.11,.25,1.),vec3(1.,.13,.075),vec3(.055,1.,.56),vec3(.46,.075,1.));const int WORD_COUNT=21;const int GROUP_COUNT=9;const float TEXT_LOOP=58.4;const float WORD_START[21]=float[21](0.,1.2,2.,7.2,8.4,9.2,14.4,15.6,16.8,22.,22.8,27.6,28.4,33.6,34.8,35.6,40.8,41.6,46.8,48.,53.2);const int GROUP_FIRST[10]=int[10](0,3,6,9,11,13,16,18,20,21);const int WORD_FIRST[22]=int[22](0,4,6,16,25,27,32,39,45,51,53,59,61,67,74,76,83,85,90,94,101,111);const uint TEXT[28]=uint[28](1297239878u,1296388937u,1313428560u,777212741u,1414548805u,1397050953u,1179863379u,776819279u,1213484878u,1162301001u,1414744408u,1330397523u,1311655246u,1380532815u,1311524948u,1095058511u,1311656020u,1229476943u,1330923342u,1096045633u,1311657545u,1095059023u,1330064978u,1161971022u,1145982809u,1096237358u,1229866315u,3032910u);const float GLYPH_X[111]=float[111](.2219,.7444,1.2512,1.805,.2375,.7131,.2375,.7444,1.2659,1.7884,2.2796,2.7552,3.2607,3.7676,4.2745,4.6563,.2375,.7444,1.2659,1.7884,2.2796,2.7552,3.2607,3.7676,4.2745,.2375,.7131,.2219,.7444,1.2512,1.805,2.2025,.2688,.8069,1.3294,1.8519,2.3431,2.8188,3.3412,.2375,.7756,1.2981,1.7738,2.2962,2.8031,.3,.8069,1.2981,1.8362,2.3417,2.7236,.2688,.8069,.2688,.7444,1.1888,1.6956,2.2181,2.6,.2688,.8069,.2688,.7756,1.3138,1.7269,2.2494,2.6469,.2688,.8069,1.3294,1.8519,2.3431,2.8188,3.3412,.2844,.7912,.3,.7131,1.2512,1.6488,2.1712,2.6469,3.0444,.2688,.8069,.2219,.6975,1.2356,1.7581,2.1712,.2688,.8069,1.345,1.8505,.2688,.7756,1.3294,1.8362,2.3744,2.9111,3.2773,.3,.8225,1.3606,1.8831,2.4212,2.9281,3.4194,3.895,4.4175,4.815);const float WORD_EXTENT[21]=float[21](2.0737,.9819,4.8001,4.5432,.9819,2.3462,3.61,3.0719,2.8673,1.0912,2.7438,1.0912,2.7906,3.61,1.0756,3.1881,1.0912,2.315,2.1036,3.4211,4.9587);const vec4 PHRASE_LINES[9]=vec4[9](vec4(8.4357,3.3456,4.8001,2.),vec4(8.4513,4.5432,3.6181,1.),vec4(10.1292,3.61,6.2292,1.),vec4(4.125,1.0912,2.7438,1.),vec4(4.1718,1.0912,2.7906,1.),vec4(8.4537,3.61,4.5537,1.),vec4(3.6962,1.0912,2.315,1.),vec4(5.8147,2.1036,3.4211,1.),vec4(4.9587,4.9587,-0.29,1.));const vec2 WORD_LINE_X[21]=vec2[21](vec2(0.,0.),vec2(2.3637,2.3637),vec2(3.6356,0.),vec2(0.,0.),vec2(4.8332,0.),vec2(6.1051,1.2719),vec2(0.,0.),vec2(3.9,0.),vec2(7.2619,3.3619),vec2(0.,0.),vec2(1.3812,0.),vec2(0.,0.),vec2(1.3812,0.),vec2(0.,0.),vec2(3.9,0.),vec2(5.2656,1.3656),vec2(0.,0.),vec2(1.3812,0.),vec2(0.,0.),vec2(2.3936,0.),vec2(0.,0.));struct Phrase{int first;int count;int split;float loopIndex;float start;float cell;vec2 line0;vec2 line1;};float quintic(float x){x=clamp(x,0.,1.);return x*x*x*(x*(x*6.-15.)+10.);}uint hashU(uint v){v^=0xa3c59ac3u;v*=0x9e3779b9u;v^=v>>16u;v*=0x9e3779b9u;v^=v>>16u;v*=0x9e3779b9u;return v;}float hash1(uint v){return float(hashU(v))*(1./4294967296.);}uint hashCell(ivec2 c,uint salt){return hashU(uint(c.x)*0x8da6b343u^uint(c.y)*0xd8163841u^salt);}vec2 screenPos(vec2 fragCoord,vec2 res){return(2.*fragCoord-res)/res.y;}vec2 screenUv(vec2 s,vec2 res){return(s*res.y+res)*.5/res;}vec3 viewRay(vec2 s){return normalize(CAM_RIGHT*s.x+CAM_UP*s.y+CAM_FORWARD*CAM_ZOOM);}vec2 sheetPoint(vec2 s){vec3 d=viewRay(s);return(EYE+d*((SHEET_Y-EYE.y)/d.y)).xz;}vec2 sheetScreen(vec2 q){vec3 v=vec3(q.x,SHEET_Y,q.y)-EYE;return vec2(dot(v,CAM_RIGHT),dot(v,CAM_UP))*CAM_ZOOM/dot(v,CAM_FORWARD);}float blurRadius(float lens){return clamp(abs(lens),.0001,.12)*.3;}float dofWeight(float centerBlur,float centerLens,float blur,float lens){float weight=lens<centerLens?blur*41.:1.;if(!(centerBlur>blur+.00627451))weight=1.;return clamp(weight,0.,1.);}int textChar(int i){return int((TEXT[i>>2]>>(uint(i&3)*8u))&255u);}float wordRead(int w){int c=textChar(WORD_FIRST[w+1]-1);return c==46||c==33||c==63?2.4:2.;}vec3 wordColor(Phrase p,int w){return WORD_COLORS[(int(p.loopIndex)*WORD_COUNT+w)%5];}float wordStart(Phrase p,int i){return p.start+WORD_START[p.first+i];}float wordRelease(Phrase p,int i){return wordStart(p,i)+REVEAL+wordRead(p.first+i);}Phrase phraseAt(float t,float aspect){Phrase p;p.loopIndex=floor(t/TEXT_LOOP);p.start=p.loopIndex*TEXT_LOOP;int g=0;for(int i=1;i<GROUP_COUNT;i++)if(WORD_START[GROUP_FIRST[i]]<=t-p.start)g=i;p.first=GROUP_FIRST[g];p.count=GROUP_FIRST[g+1]-p.first;vec4 lines=PHRASE_LINES[g];float cell=LETTER_CELL*WORD_SIZE;bool broken=lines.x*cell>1.5*aspect;p.split=broken?int(lines.w):p.count;float top=broken?lines.y:lines.x,bottom=lines.z,widest=max(top,bottom)*cell,scale=min(1.3,1.5*aspect/widest);p.cell=cell*scale;float cap=CAP_HEIGHT*p.cell,rowStep=1.35*cap,pad=.5*cap+.04;vec2 box=vec2(widest*scale,cap+(p.split<p.count?rowStep:0.));vec4 range=vec4(-aspect+.5*box.x+pad,aspect-.5*box.x-pad,-1.+.5*box.y+pad,1.-.5*box.y-pad);uint loopSeed=hashU(uint(p.loopIndex)+0x51ed27u);int stride=int(hashU(loopSeed)%6u);stride=stride<3?1<<stride:(stride==3?5:(stride==4?7:8));int slot=(stride*g+int(hashU(loopSeed^0x2c1b3c6du)%9u))%9;uint jitter=hashU(loopSeed^uint(g)*0x9e3779b9u);vec2 place=(vec2(float(slot%3),float(slot/3))+.15+.7*vec2(hash1(jitter),hash1(jitter^0x68e31da4u)))/3.;vec2 centre=vec2(range.y>range.x?mix(range.x,range.y,place.x):0.,range.w>range.z?mix(range.z,range.w,place.y):0.);p.line0=vec2(centre.x-.5*top*p.cell,centre.y+.5*box.y-cap);p.line1=vec2(centre.x-.5*bottom*p.cell,p.line0.y-rowStep);return p;}vec2 wordOrigin(Phrase p,int i){vec2 x=WORD_LINE_X[p.first+i]*p.cell;return i<p.split?p.line0+vec2(x.x,0.):p.line1+vec2(x.y,0.);}float wordInk(sampler2D font,int w,vec2 local){int first=WORD_FIRST[w],last=WORD_FIRST[w+1];float field=1.;for(int i=first;i<last;i++){vec2 cell=vec2(local.x-GLYPH_X[i]+.5,local.y+BASELINE);if(cell.x<0.)break;if(all(lessThanEqual(cell,vec2(1.)))&&cell.y>=0.){int code=textChar(i);field=min(field,textureLod(font,(vec2(float(code%16),float(15-code/16))+cell)/16.,0.).a);}}return field;}float released(vec2 local,float progress){vec2 uv=local*vec2(.133,.71);float field=clamp(.5+.22*sin(uv.x*17.+uv.y*3.)+.18*sin(uv.x*47.-uv.y*11.)+.1*sin(uv.y*29.+uv.x*7.),0.,1.);float threshold=.22+.56*field;return smoothstep(threshold-.22,threshold+.22,progress);}vec2 wave(vec2 p,vec2 k,float a,float phase){return a*cos(dot(k,p)+phase)*vec2(k.y,-k.x);}const vec2 PRESET_DRIFT[4]=vec2[4](vec2(0.,.13),vec2(.12,0.),vec2(0.,-.12),vec2(.03,.02));const vec4 PRESET_WAVE[12]=vec4[12](vec4(2.1,.3,.045,.21),vec4(-.9,1.5,.05,-.17),vec4(.4,2.4,.05,.19),vec4(1.3,-.8,.04,-.23),vec4(1.9,-.4,.05,-.2),vec4(.8,1.6,.045,.16),vec4(1.2,.7,.09,.13),vec4(-.6,1.3,.085,-.11),vec4(1.5,-1.1,.06,.17),vec4(4.3,1.9,.009,.31),vec4(-2.2,4.1,.009,-.27),vec4(3.1,-3.6,.007,.23));const float PRESET_PHASE[12]=float[12](0.,1.,2.,0.,3.,0.,0.,2.,4.,0.,1.3,2.7);vec2 flowCoordinates(vec2 q){return vec2(dot(q-FLOW_CENTER,FLOW_RIGHT),dot(q-FLOW_CENTER,FLOW_AWAY));}vec2 worldFlow(vec2 v){return FLOW_SPEED*(v.x*FLOW_RIGHT+v.y*FLOW_AWAY);}vec2 baseFlow(vec2 p,float t){float span=FLOW_HOLD+FLOW_MORPH,c=mod(t,4.*span),i=floor(c/span),m=quintic((c-i*span-FLOW_HOLD)/FLOW_MORPH);int now=int(i),next=(now+1)%4,a=now==3?3:2,waves=3+a+(m>0.?(next==3?3:2):0);vec2 v=(1.-m)*PRESET_DRIFT[now]+m*PRESET_DRIFT[next];for(int k=0;k<waves;k++){int j=k<3?9+k:(k<3+a?2*now+k-3:2*next+k-3-a);vec4 w=PRESET_WAVE[j];v+=(k<3?1.:(k<3+a?1.-m:m))*wave(p,w.xy,w.z,PRESET_PHASE[j]+w.w*t);}return v;}vec3 wordSwirl(Phrase ph,int i){vec2 origin=wordOrigin(ph,i),left=sheetPoint(origin+vec2(0.,.3*ph.cell)),right=sheetPoint(origin+vec2(WORD_EXTENT[ph.first+i]*ph.cell,.3*ph.cell));float r=.5*distance(left,right)+.05;return vec3(flowCoordinates(.5*(left+right)),i%2==0?r:-r);}vec2 swirlFlow(vec2 p,float t,vec4 swirl){float u=(t-swirl.w)/1.8,r=abs(swirl.z);if(u<=0.||u>=1.)return vec2(0.);vec2 d=p-swirl.xy;float rise=sin(PI*u);return .16*sign(swirl.z)*rise*rise*exp(-dot(d,d)/(r*r))*vec2(-d.y,d.x)/r;}struct Swirls{vec4 s0,s1,s2,s3,s4,s5;};const Swirls NO_SWIRLS=Swirls(vec4(1e9),vec4(1e9),vec4(1e9),vec4(1e9),vec4(1e9),vec4(1e9));Swirls addSwirls(Swirls s,Phrase p,float t,float reach){for(int k=0;k<p.count;k++){int i=p.count-1-k;float start=wordRelease(p,i)+.6;if(p.loopIndex<0.||start>=t||start+1.8<=t-reach)continue;s=Swirls(vec4(wordSwirl(p,i),start),s.s0,s.s1,s.s2,s.s3,s.s4);}return s;}vec2 sheetFlow(vec2 q,float t,Swirls s){vec2 p=flowCoordinates(q),v=baseFlow(p,t);vec3 a=vec3(s.s0.w,s.s1.w,s.s2.w),b=vec3(s.s3.w,s.s4.w,s.s5.w);int k=int(dot(vec3(lessThanEqual(a,vec3(t-1.8))),vec3(1.))+dot(vec3(lessThanEqual(b,vec3(t-1.8))),vec3(1.)));int end=int(dot(vec3(lessThan(a,vec3(t))),vec3(1.))+dot(vec3(lessThan(b,vec3(t))),vec3(1.)));for(;k<end;k++)v+=swirlFlow(p,t,k==0?s.s0:(k==1?s.s1:(k==2?s.s2:(k==3?s.s3:(k==4?s.s4:s.s5)))));return worldFlow(v);}
+`;
+
+
+const ic0 = `
+//iChannel0
+const float WELL_INK=1.;const float WORD_GLOW=.3;const vec3 DEEP=vec3(.025,.035,.06);const vec3 PAINTS[6]=vec3[6](vec3(.12,.3,.1),vec3(.05,.24,.2),vec3(.26,.3,.1),vec3(.32,.2,.06),vec3(.1,.28,.14),vec3(.26,.32,.24));float lattice(ivec2 p){return float(hashCell(p+32768,0u))*(1./4294967296.);}vec3 noiseSlope(vec2 p){ivec2 i=ivec2(floor(p));vec2 f=fract(p),u=f*f*(3.-2.*f),du=6.*f*(1.-f);float a=lattice(i),b=lattice(i+ivec2(1,0)),c=lattice(i+ivec2(0,1)),d=lattice(i+ivec2(1));return vec3(a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y,du*(vec2(b-a,c-a)+(a-b-c+d)*u.yx));}vec3 opening(vec2 q){vec2 p=q*.7;for(int i=NO_UNROLL;i<8;i++){vec3 n=noiseSlope(p+vec2(3.1,8.3));p+=.2*vec2(n.z,-n.y)/max(.35,length(n.yz));}const float NOISE_SCALE[6]=float[6](.9,.55,1.6,1.3,2.4,.8),NOISE_SHIFT[6]=float[6](23.1,11.7,2.9,4.7,7.7,31.7);float n[6];for(int i=NO_UNROLL;i<6;i++)n[i]=noiseSlope(p*NOISE_SCALE[i]+NOISE_SHIFT[i]).x;float hue=n[0]*6.,stream=smoothstep(.56,.78,n[1]*.8+n[2]*.2);float layer=p.y*7.+n[3]*4.,stripe=smoothstep(.15,.5,fract(layer))*smoothstep(1.,.65,fract(layer));int k=int(floor(hue));vec3 color=mix(PAINTS[k%6],PAINTS[(k+1)%6],smoothstep(.3,.7,fract(hue)))*(.6+.9*n[4]);color=mix(color,vec3(.34,.11,.04),stripe*smoothstep(.6,.76,n[5]))*stream*(.65+.35*stripe);color+=vec3(.02,.04,.18)*smoothstep(0.,.04,stream)*smoothstep(.1,.04,stream);uint cell=hashCell(ivec2(floor(q*80.))+4096,0u);return DEEP+color*(.75+.5*vec3(hash1(cell),hash1(cell^1u),hash1(cell^2u)));}vec4 sharpSample(vec2 uv,vec2 res){vec2 p=uv*res-.5,f=fract(p),base=floor(p)+.5;vec2 w0=f*(-.5+f*(1.-.5*f)),w1=1.+f*f*(-2.5+1.5*f),w2=f*(.5+f*(2.-1.5*f)),w3=f*f*(-.5+.5*f),w12=w1+w2;vec2 t0=(base-1.)/res,t3=(base+2.)/res,t12=(base+w2/w12)/res;vec4 
+value=(texture(iChannel0,vec2(t0.x,t0.y))*w0.x+texture(iChannel0,vec2(t12.x,t0.y))*w12.x+texture(iChannel0,vec2(t3.x,t0.y))*w3.x)*w0.y;value+=(texture(iChannel0,vec2(t0.x,t12.y))*w0.x+texture(iChannel0,vec2(t12.x,t12.y))*w12.x+texture(iChannel0,vec2(t3.x,t12.y))*w3.x)*w12.y;value+=(texture(iChannel0,vec2(t0.x,t3.y))*w0.x+texture(iChannel0,vec2(t12.x,t3.y))*w12.x+texture(iChannel0,vec2(t3.x,t3.y))*w3.x)*w3.y;ivec2 c=ivec2(floor(p));vec4 a=texelFetch(iChannel0,c,0),b=texelFetch(iChannel0,c+ivec2(1,0),0),d=texelFetch(iChannel0,c+ivec2(0,1),0),e=texelFetch(iChannel0,c+ivec2(1),0);return clamp(value,min(min(a,b),min(d,e)),max(max(a,b),max(d,e)));}
+void mainImage(out vec4 fragColor,in vec2 fragCoord){vec2 res=iResolution.xy;vec2 s=screenPos(fragCoord,res);vec2 q=sheetPoint(s);float t=iTime;float dt=clamp(iTimeDelta,0.,.05);Phrase ph=phraseAt(t,res.x/res.y);Swirls swirls=addSwirls(NO_SWIRLS,ph,t,0.);vec2 from=q;for(int k=NO_UNROLL;k<2;k++)from=q-(k==0?.5:1.)*dt*sheetFlow(from,t,swirls);vec2 uv=screenUv(sheetScreen(from),res);bool start=iFrame==0||texelFetch(iChannel0,ivec2(fragCoord),0)==vec4(0.);vec4 last;if(!start&&all(greaterThan(uv,vec2(0.)))&&all(lessThan(uv,vec2(1.)))){last=sharpSample(uv,res);}else{last=vec4(opening(start?q:from-vec2(.031,.019)*t),0.);}if(start){fragColor=last;return;}vec3 excess=last.rgb-DEEP;float peak=max(excess.r,max(excess.g,excess.b));if(peak>WORD_GLOW)excess*=max(exp(-dt/1.5),WORD_GLOW/peak);vec3 color=DEEP+excess*exp(-3.*dt/COLOR_FADE);float fresh=last.a*exp(-dt/1.2);ivec2 home=ivec2(floor(q/1.2));for(int k=NO_UNROLL;k<9;k++){ivec2 c=home+ivec2(k%3-1,k/3-1);uint h=hashCell(c+4096,0u);if(hash1(h)>.6)continue;vec2 well=(vec2(c)+.2+.6*vec2(hash1(h^1u),hash1(h^2u)))*1.2;float radius=mix(.1,.22,hash1(h^3u));float d=distance(q,well);if(d>radius)continue;vec3 ink=.8*PAINTS[int(hashU(h^uint(floor(t/47.+hash1(h^4u))))%6u)];float pulse=.6+.4*sin(.3*t+6.3*hash1(h^5u));color=mix(color,ink,(1.-exp(-2.5*WELL_INK*pulse*dt))*smoothstep(radius,.3*radius,d));}int age=iFrame-uFrameupdate;if(age>=0&&age<MAXAGE){vec2 textUV=fragCoord.xy/iResolution.xy;vec4 text=texture(iChannel7,textUV);float mask=max(text.r,max(text.g,text.b));mask=smoothstep(0.10,0.90,mask);float strength=1.0-float(age)/float(MAXAGE);float amount=mask*strength*(10.0/float(MAXAGE))*0.4;color=mix(color,text.rgb,amount);fresh=max(fresh,amount);}fragColor=vec4(color,fresh);}
+`;
+
+const ic1=`
+//iChannel1
+const float SPARKLE=.5;const float FRESH_SHINE=1.;
+const float FOCUS=3.56;
+const float APERTURE=.059;
+const float CELL=10./512.;
+const float GENERATION=3.;
+const float FADE=.6;
+const vec2 BRDF_ENERGY[32]=vec2[32](vec2(.963485579,.935543537),vec2(.927107471,.856176674),vec2(.900337964,.797831237),vec2(.883154088,.749926031),vec2(.874827313,.709445238),vec2(.872618822,.674226046),vec2(.874337569,.643178701),vec2(.878454942,.61544776),vec2(.884102723,.59042716),vec2(.890457196,.567594469),vec2(.897530086,.546785951),vec2(.904364995,.527685225),vec2(.911172523,.509999931),vec2(.917560591,.49359557),vec2(.92333964,.478318483),vec2(.928835802,.464052081),vec2(.933787648,.45069164),vec2(.93809043,.438145876),vec2(.942026013,.426344514),vec2(.945628572,.415208369),vec2(.94875777,.40469411),vec2(.951823748,.394740194),vec2(.954590956,.385292202),vec2(.956919742,.37631771),vec2(.959003824,.367791981),vec2(.960959041,.359659016),vec2(.962808697,.351913631),vec2(.964451634,.344512403),vec2(.965854815,.337443024),vec2(.967271737,.330670536),vec2(.968507921,.324181944),vec2(.969594822,.317962229));struct Hit{float t;vec2 centre;uint seed;int layer;};struct Corners{vec4 t,cx,cz,layer;uvec4 seed;};struct Look{vec3 n,albedo;float a2,blend,shine;};vec2 rnd2(uint seed,uint lane){uint h=(seed^lane*0x9e3779b9u)*0x85ebca6bu;h^=h>>16;return vec2(h&0xffffu,h>>16)/65536.;}mat3 rotation(float angle,vec3 axis){float c=cos(angle),s=sin(angle),t=1.-c;vec3 n=normalize(axis);return mat3(t*n.x*n.x+c,t*n.x*n.y+s*n.z,t*n.x*n.z-s*n.y,t*n.x*n.y-s*n.z,t*n.y*n.y+c,t*n.y*n.z+s*n.x,t*n.x*n.z+s*n.y,t*n.y*n.z-s*n.x,t*n.z*n.z+c);}mat3 flakeRotation(uint seed,int layer){vec2 rate=layer==0?vec2(.0392,.0196):vec2(.0118,.0039),a=rnd2(seed,3u);float spin=(a.y*rate.y+rate.x)*15.*(rnd2(seed,2u).y<.5?-1.:1.)*(layer==0?1.+.5*SPARKLE:1.);return rotation(mod((a.x*2.-1.)*2.*TAU+spin*iTime,TAU),vec3(rnd2(seed,4u),rnd2(seed,5u).x));}vec3 flakeOffset(uint seed,int layer,vec2 centre){return vec3(centre.x,(rnd2(seed,2u).x-.5)*.05+(layer==0?.0394:.0359),centre.y)-EYE;}vec3 light(vec3 l,float power,vec3 v,vec3 n,vec3 albedo,float a2,float energy){vec3 h=normalize(l+v);float NoL=clamp(dot(n,l),0.,1.),NoV=clamp(dot(n,v),0.,1.),NoH=dot(n,h);vec3 f=albedo+(1.-albedo)*pow(max(1.-dot(h,v),0.),5.);float d=NoH*NoH*(a2-1.)+1.;float smith=.5/max(NoL*sqrt(NoV*NoV*(1.-a2)+a2)+NoV*sqrt(NoL*NoL*(1.-a2)+a2),.0001);return f*(1.+albedo*(1.-energy)/energy)*a2/(PI*d*d)*smith*NoL*power;}void generationOrigins(vec2 q,float t,float aspect,out vec2 newest,out vec2 middle,out vec2 oldest){Swirls swirls=NO_SWIRLS;float at=t;for(int k=NO_UNROLL;k<2;k++){Phrase ph=phraseAt(at,aspect);swirls=addSwirls(swirls,ph,t,3.*GENERATION);at=wordStart(ph,0)-.001;}float born=floor(t/GENERATION)*GENERATION,tau=t,h=(t-born)/6.;vec2 mid=q;newest=middle=q;for(int i=NO_UNROLL;i<36;i++){bool midway=(i&1)==0;vec2 v=sheetFlow(midway?q:mid,midway?tau:tau-.5*h,swirls);if(midway)mid=q-.5*h*v;else{q-=h*v;tau-=h;if(i==11){newest=q;tau=born;h=GENERATION/6.;}else if(i==23){middle=q;tau=born-GENERATION;}}}oldest=q;}void touch(vec3 oc,float dist,mat3 r,vec2 centre,float halfSize,uint seed,int layer,vec2 s,float quarter,inout Hit h0,inout Corners c){float z=dot(oc,CAM_FORWARD);vec2 sc=vec2(dot(oc,CAM_RIGHT),dot(oc,CAM_UP))*CAM_ZOOM/z;vec3 jx=(CAM_RIGHT*CAM_ZOOM-sc.x*CAM_FORWARD)/z,jy=(CAM_UP*CAM_ZOOM-sc.y*CAM_FORWARD)/z;vec2 a=vec2(dot(jx,r[0]),dot(jy,r[0]))*halfSize,b=vec2(dot(jx,r[1]),dot(jy,r[1]))*halfSize;float det=a.x*b.y-a.y*b.x;if(abs(det)<1e-20)return;vec2 d=(s-sc)/det,du=vec2(b.y,-b.x)*quarter/det,dv=vec2(-a.y,a.x)*quarter/det;float u=b.y*d.x-b.x*d.y,v=a.x*d.y-a.y*d.x;if(max(abs(u),abs(v))<=1.&&dist<h0.t)h0=Hit(dist,centre,seed,layer);const vec4 SX=vec4(-1.,1.,-1.,1.),SY=vec4(-1.,-1.,1.,1.);vec4 cu=u+SX*du.x+SY*du.y,cv=v+SX*dv.x+SY*dv.y;bvec4 hit=bvec4(vec4(lessThanEqual(max(abs(cu),abs(cv)),vec4(1.)))*vec4(lessThan(vec4(dist),c.t)));c.t=mix(c.t,vec4(dist),hit);c.cx=mix(c.cx,vec4(centre.x),hit);c.cz=mix(c.cz,vec4(centre.y),hit);c.layer=mix(c.layer,vec4(layer),hit);c.seed+=uvec4(hit)*(uvec4(seed)-c.seed);}void flake(ivec2 cell,uint seed,int layer,float age,vec2 origin,mat2 toWorld,vec2 sheet,vec3 d0,vec2 s,float quarter,float spread,inout Hit h0,inout Corners corners){vec2 r=rnd2(seed,0u);float shown=r.x*GENERATION,grow=smoothstep(shown,shown+FADE,age)*(1.-smoothstep(shown+2.*GENERATION-FADE,shown+2.*GENERATION,age));if(grow<=0.)return;vec2 xz=sheet+toWorld*((vec2(cell)+rnd2(seed,1u))*CELL-5.-origin);vec3 oc=flakeOffset(seed,layer,xz);float halfSize=(r.y*.0157+.0314)*.1*grow;vec3 miss=cross(oc,d0);float dist=length(oc),reach=1.5*halfSize+spread*dist;if(dot(miss,miss)>reach*reach)return;touch(oc,dist,flakeRotation(seed,layer),xz,halfSize,seed,layer,s,quarter,h0,corners);}void traceFlakes(vec3 d0,vec2 s,float quarter,float spread,int generation,float age,vec2 origin,mat2 toBirth,vec2 sheet,inout Hit h0,inout Corners corners){float enter=(.07-EYE.y)/d0.y,leave=(.005-EYE.y)/d0.y;mat2 toWorld=inverse(toBirth);vec2 along=toBirth*d0.xz,p0=(origin+toBirth*(EYE.xz+d0.xz*enter-sheet)+5.)/CELL,direction=sign(along);ivec2 cell=ivec2(floor(p0));vec2 safeRay=vec2(abs(along.x)<1e-9?(along.x<0.?-1e-9:1e-9):along.x,abs(along.y)<1e-9?(along.y<0.?-1e-9:1e-9):along.y);vec2 delta=abs(vec2(CELL)/safeRay),next=(vec2(cell)+max(direction,vec2(0.))-p0)*CELL/safeRay;next=mix(next,vec2(1e30),equal(direction,vec2(0.)));uint generationHash=hashU(uint(generation)*0x2c1b3c6du^0xcb1ab31fu);for(int step=NO_UNROLL;step<48;step++){uint cellHash=hashCell(cell,generationHash);for(int k=NO_UNROLL;k<4;k++)flake(cell,(cellHash^uint(k+1)*0x632be59bu)*0x7feb352du,k>>1,age,origin,toWorld,sheet,d0,s,quarter,spread,h0,corners);float boundary=enter+min(next.x,next.y);if(boundary>=leave||max(h0.t,max(max(corners.t.x,corners.t.y),max(corners.t.z,corners.t.w)))<=boundary)break;if(next.x<next.y){next.x+=delta.x;cell.x+=int(direction.x);}else{next.y+=delta.y;cell.y+=int(direction.y);}}}Look flakeLook(Hit hit){vec3 n=flakeRotation(hit.seed,hit.layer)[2];n=dot(flakeOffset(hit.seed,hit.layer,hit.centre),n)>0.?-n:n;vec4 pigment=textureLod(iChannel0,screenUv(sheetScreen(hit.centre),iResolution.xy),0.);vec3 albedo=2.49*pigment.rgb*(.75+.5*vec3(rnd2(hit.seed,6u),rnd2(hit.seed,7u).x));float roughness=1.-.2*SPARKLE;if(hit.layer==0){vec2 glint=rnd2(hit.seed,8u);if(glint.y<.5)albedo=.8*vec3(1.,.47,.27)*glint.x*glint.x*glint.x;albedo*=1.+.8*SPARKLE;roughness=.3-.08*SPARKLE;}roughness*=roughness;return Look(n,albedo,roughness*roughness,clamp((roughness-.1537870049980777)/.8462129950019223,0.,1.),1.+FRESH_SHINE*pigment.a);}vec3 shade(Look f,vec3 rd){float x=clamp(clamp(dot(f.n,-rd),0.,1.)*32.-.5,0.,31.);vec2 table=mix(BRDF_ENERGY[int(x)],BRDF_ENERGY[min(int(x)+1,31)],fract(x));float energy=mix(table.x,table.y,f.blend);vec3 lit=light(vec3(.50373936,.69598544,-.51169336),10.,-rd,f.n,f.albedo,f.a2,energy)+light(vec3(.04815805,-.39421037,-.91776264),4.5,-rd,f.n,f.albedo,f.a2,energy);return lit*f.shine;}
+void mainImage(out vec4 fragColor,in vec2 fragCoord){vec2 res=iResolution.xy,s=screenPos(fragCoord,res),sheet=sheetPoint(s);vec2 newest,middle,oldest;generationOrigins(sheet,iTime,res.x/res.y,newest,middle,oldest);mat2 fromSheet=inverse(mat2(dFdx(sheet),dFdy(sheet)));mat2 birth0=mat2(dFdx(newest),dFdy(newest))*fromSheet,birth1=mat2(dFdx(middle),dFdy(middle))*fromSheet,birth2=mat2(dFdx(oldest),dFdy(oldest))*fromSheet;vec3 d0=viewRay(s);const vec4 SX=vec4(-1.,1.,-1.,1.),SY=vec4(-1.,-1.,1.,1.);float quarter=.5/res.y;vec4 sx=s.x+SX*quarter,sy=s.y+SY*quarter;vec4 dx=CAM_RIGHT.x*sx+CAM_UP.x*sy+CAM_FORWARD.x*CAM_ZOOM,dy=CAM_RIGHT.y*sx+CAM_UP.y*sy+CAM_FORWARD.y*CAM_ZOOM,dz=CAM_RIGHT.z*sx+CAM_UP.z*sy+CAM_FORWARD.z*CAM_ZOOM;Hit h0=Hit(-EYE.y/d0.y,vec2(0.),0u,-1);Corners corners=Corners(-EYE.y/(dy*inversesqrt(dx*dx+dy*dy+dz*dz)),vec4(0.),vec4(0.),vec4(-1.),uvec4(0u));float born=floor(iTime/GENERATION),spread=1./(res.y*CAM_ZOOM);for(int g=NO_UNROLL;g<3;g++)traceFlakes(d0,s,quarter,spread,int(born)-g,iTime-(born-float(g))*GENERATION,g==0?newest:(g==1?middle:oldest),g==0?birth0:(g==1?birth1:birth2),sheet,h0,corners);vec4 pigment=textureLod(iChannel0,screenUv(sheetScreen(EYE.xz-EYE.y/d0.y*d0.xz),res),0.);vec3 ground=pigment.rgb*(vec3(1.,.498,1.)+FRESH_SHINE*pigment.a),colour=vec3(0.);Look look=Look(vec3(0.),vec3(0.),0.,0.,0.);Hit last=Hit(0.,vec2(0.),0u,-1);for(int k=NO_UNROLL;k<5;k++){Hit hit=h0;vec3 rd=d0;if(k>0){vec4 e=vec4(equal(ivec4(1,2,3,4),ivec4(k)));uvec4 u=uvec4(e);rd=viewRay(s+quarter*vec2(dot(SX,e),dot(SY,e)));hit=Hit(dot(corners.t,e),vec2(dot(corners.cx,e),dot(corners.cz,e)),corners.seed.x*u.x+corners.seed.y*u.y+corners.seed.z*u.z+corners.seed.w*u.w,int(dot(corners.layer,e)));}if(hit.layer<0){colour+=.2*ground;continue;}if(hit.seed!=last.seed||hit.layer!=last.layer){look=flakeLook(hit);last=hit;}colour+=.2*shade(look,rd);}float away=1.+dot(d0*h0.t,CAM_FORWARD);fragColor=vec4(colour,.2*(away-FOCUS)/away*(APERTURE/(FOCUS-APERTURE))/.024);}
+`;
+
+const ic2=`
+//iChannel2
+vec2 disk(vec2 coordinate){float x=2.*coordinate.x-1.,y=2.*coordinate.y-1.,radius=y,angle;if(x*x>y*y){radius=x;angle=PI*.25*y/x;}else angle=PI*.25*x/y+PI*.5;return vec2(cos(angle)/(iResolution.x/iResolution.y),sin(angle))*radius;}
+void mainImage(out vec4 fragColor,in vec2 fragCoord){vec2 uv=fragCoord/iResolution.xy;float centerLens=textureLod(iChannel0,uv,0.).a,centerBlur=blurRadius(centerLens),totalWeight=0.;vec4 total=vec4(0.);for(int row=0;row<8;row++)for(int column=0;column<8;column++){
+vec2 coordinate=uv+disk((vec2(column,row)+.5)/8.)*centerBlur;
+if(any(lessThan(coordinate,vec2(0.)))||any(greaterThan(coordinate,vec2(1.))))continue;float lens=textureLod(iChannel0,coordinate,0.).a,blur=blurRadius(lens),weight=dofWeight(centerBlur,centerLens,blur,lens);total+=vec4(textureLod(iChannel0,coordinate,.9).rgb,blur)*weight;totalWeight+=weight;}fragColor=total/max(totalWeight,1e-8);}
+`;
+
+const ic3=`
+//iChannel3
+void mainImage(out vec4 fragColor,in vec2 fragCoord){vec2 uv=fragCoord/iResolution.xy;vec4 center=textureLod(iChannel1,uv,0.),total=vec4(0.);float centerLens=textureLod(iChannel5,uv,0.).a,totalWeight=0.;for(int k=NO_UNROLL;k<9;k++){vec2 coordinate=uv+vec2(float(k%3-1)/(iResolution.x/iResolution.y),float(k/3-1))*.085*center.a;vec4 neighbour=textureLod(iChannel1,coordinate,0.);float weight=dofWeight(center.a,centerLens,neighbour.a,textureLod(iChannel5,coordinate,0.).a);total+=neighbour*weight;totalWeight+=weight;}vec3 colour=total.rgb/max(totalWeight,1e-8);fragColor=vec4(colour,dot(colour*vec3(greaterThan(colour,vec3(.239))),vec3(.2126,.7152,.0722)));}
+`;
+
+const main=`
+//Main
+const float WORD_WEIGHT=.015;const float WORD_SHADOW=.55;vec4 chromatic(vec2 uv){vec2 towardCenter=vec2(.5)-uv;vec4 result=textureLod(iChannel3,uv,0.);float red=0.,blue=0.;for(int index=NO_UNROLL;index<9;index++){float displacement=(float(index)*2.+.5)*.000235294122;red+=textureLod(iChannel3,uv-towardCenter*displacement,0.).r;blue+=textureLod(iChannel3,uv+towardCenter*displacement,0.).b;}result.r=red/9.;result.b=blue/9.;return result;}vec3 bloom(vec2 uv){vec2 stepUv=.02352941185*vec2(1.,iResolution.x/iResolution.y);const float AT[5]=float[5](-15./7.,-1.,0.,1.,15./7.),WEIGHT[5]=float[5](7.,15.,20.,15.,7.);vec4 total=vec4(0.);for(int k=NO_UNROLL;k<25;k++)total+=textureLod(iChannel3,uv+vec2(AT[k%5],AT[k/5])*stepUv,5.)*WEIGHT[k%5]*WEIGHT[k/5];return total.rgb/max(dot(total.rgb,vec3(.2126,.7152,.0722)),1e-6)*total.a/4096.;}vec3 aces(vec3 color){color=max(color,vec3(0.));vec3 a=vec3(dot(vec3(.59719,.35458,.04823),color),dot(vec3(.076,.90834,.01566),color),dot(vec3(.0284,.13383,.83777),color));vec3 mapped=(a*(a+.0245786)-.000090537)/(a*(.983729*a+.432951)+.238081);return clamp(vec3(dot(vec3(1.60475,-.53108,-.07367),mapped),dot(vec3(-.10208,1.10813,-.00605),mapped),dot(vec3(-.00327,-.07276,1.07602),mapped)),0.,1.);}vec3 gradeCurve(vec3 color){vec3 value=vec3(28.2009178,-4.47737138,20.4365427);value=value*color+vec3(-101.437163,13.6101229,-63.9569408);value=value*color+vec3(136.645712,-16.442739,79.084147);value=value*color+vec3(-88.0052381,9.97617983,-48.5028081);value=value*color+vec3(29.3367147,-3.05535481,15.0955054);value=value*color+vec3(-4.0966274,1.35431496,-1.50459414);value=value*color+vec3(.351631336,.0282354678,.293262509);return clamp(value*color+vec3(-.00198259751,.00569606752,.0057168624),0.,1.);}vec3 toSrgb(vec3 color){return mix(1.055*pow(color,vec3(1./2.4))-.055,color*12.92,lessThanEqual(color,vec3(.0031308)));}vec4 random4(vec2 coordinate){float value=sin(dot(coordinate,vec2(12.9898,78.233)))*43758.5453;return fract(value*vec4(1.,1.2154,1.3453,1.3647))*2.-1.;}float noise3(vec3 coordinate){vec3 grid=floor(coordinate)/256.+.5/256.,local=fract(coordinate),u=vec3(quintic(local.x),quintic(local.y),quintic(local.z));float total=0.;for(int k=NO_UNROLL;k<8;k++){vec3 corner=vec3(k>>2,(k>>1)&1,k&1),weight=mix(1.-u,u,corner);vec3 gradient=random4(vec2(random4(grid.xy+corner.xy/256.).w,grid.z+corner.z/256.)).xyz*4.-1.;total+=dot(gradient,local-corner)*weight.x*weight.y*weight.z;}return total;}vec2 rotateUv(vec2 coordinate,float angle){float aspect=iResolution.x/iResolution.y,c=cos(angle),s=sin(angle);coordinate.x*=aspect;coordinate=vec2(c*coordinate.x-s*coordinate.y,s*coordinate.x+c*coordinate.y);coordinate.x/=aspect;return coordinate;}vec3 grain(vec3 color,vec2 uv){vec2 frequency=iResolution.xy/1.79019609,nativeUv=vec2(uv.x,1.-uv.y);vec3 noise;for(int c=NO_UNROLL;c<3;c++)noise[c]=noise3(vec3(rotateUv(nativeUv,c==0?1.425:(c==1?3.892:5.835))*frequency,float(c)));noise=mix(vec3(noise.r),noise,.501960813999176);float luminance=dot(color,vec3(.3,.587,.114))*.556862771511078,reverse=clamp((luminance-.2)/-.2,0.,1.);reverse=reverse*reverse*(3.-2.*reverse);return color+noise*(1.-pow(reverse+luminance,4.))*.0372549027204514;}vec4 lettering(vec2 s,float t){Phrase ph=phraseAt(t,iResolution.x/iResolution.y);vec4 layer=vec4(0.);float pixel=2./(iResolution.y*ph.cell);for(int i=NO_UNROLL;i<ph.count;i++){int w=ph.first+i;float age=t-wordStart(ph,i),release=clamp((t-wordRelease(ph,i))/RELEASE,0.,1.);vec2 local=(s-wordOrigin(ph,i))/ph.cell;if(age<0.||release>=1.||local.x<-.3||local.x>WORD_EXTENT[w]+.3||local.y<-.5||local.y>1.)continue;float shown=smoothstep(0.,1.,min(age/REVEAL,1.));ivec2 cell=ivec2(floor(local/.06));uint glintHash=hashCell(cell,uint(w));vec2 glint=(vec2(cell)+.5+(vec2(hash1(glintHash),hash1(glintHash^1u))-.5)*.35)*.06,shadowLocal=local-vec2(.03,-.05);vec4 field=vec4(1.);float glintField=1.;int lookups=release>0.?5:4;for(int k=0;k<lookups;k++){float f=wordInk(iChannel5,w,k==3?shadowLocal:(k==4?glint:local+.02*vec2(k==1,k==2)))-.5-WORD_WEIGHT;if(k<4)field[k]=f;else glintField=f;}vec3 pigment=wordColor(ph,w);pigment/=max(pigment.r,max(pigment.g,pigment.b));float alpha=smoothstep(.7*pixel,-.7*pixel,field.x)*shown*(1.-released(local,release));vec3 color=mix(mix(pigment,vec3(1.),.6-.6*released(local,1.4*release)),vec3(1.),.08+.1*clamp(local.y/CAP_HEIGHT,0.,1.));vec2 slope=(field.yz-field.x)*25.*(1.-clamp(-25.*field.x,0.,1.));color*=max(0.,1.+.75*slope.y)*inversesqrt(1.+dot(slope,slope))*alpha;alpha+=WORD_SHADOW*smoothstep(.1,-.03,field.w)*shown*(1.-released(shadowLocal,release))*(1.-alpha);float r=released(glint,release),pulse=pow(max(0.,4.*r*(1.-r)),10.);vec2 offset=(local-glint)/pixel;float diamond=exp(-1.45*(abs(offset.x)+abs(offset.y))),rays=exp(-abs(offset.x)*4.-abs(offset.y)*.7)+exp(-abs(offset.y)*4.-abs(offset.x)*.7);float glintAlpha=step(.84,hash1(glintHash^2u))*step(glintField,0.)*pulse*min(.95,diamond*.65+rays*.32);color=color*(1.-glintAlpha)+pigment*glintAlpha;alpha+=glintAlpha*(1.-alpha);layer=layer*(1.-alpha)+vec4(color,alpha);}return layer;}
+void mainImage(out vec4 fragColor,in vec2 fragCoord){vec2 uv=fragCoord/iResolution.xy;vec3 color=toSrgb(gradeCurve(grain(aces(chromatic(uv).rgb+bloom(uv)),uv)));vec4 words=vec4(0.0);int age=iFrame-uFrameupdate;if(age>=0&&age<MAXAGE){vec4 text=texture(iChannel7,uv);float a=smoothstep(0.10,0.90,max(text.r,max(text.g,text.b)));float fade=1.0-float(age)/float(MAXAGE);words=vec4(text.rgb,a*fade);}fragColor=vec4(color*(1.0-words.a)+words.rgb*words.a,1.0);}
+`;
+
+
+        const vertex2 = `in vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0);}`;
+        
+        (async () => { //using assync function                    
+            var response = await shader.Shader('shaderText', 
+            vertex2, 
+            common+ic0+ic1+ic2+ic3+main,
+                { frameSkip: 0, alpha: false, 
+                    texture:{
+                    internalFormat: "RGBA16F",                    
+                    mipmaps:true,
+                    minFilter : "LINEAR",
+                    magFilter : "LINEAR"
+                } 
+                }
+            );
+            //iChannel5 = https://didisoftwares.ddns.net/10/images/cnn.png    
+            await shader.uniform("iChannel5","https://didisoftwares.ddns.net/10/images/cnn.png",{
+filter: "LINEAR",
+mipmaps: true
+});
+            console.log('compiled');                        
+            paintTest("GOD\nBLESS",{
+width: "left",
+height: "top",
+color: "#00FF00",
+size: 40
+});
+        })();
+
+/*
+        XX(
+    "https://didisoftwares.ddns.net/10/images/flor.jpg",
+    {
+        width: "left",
+        height: "top",
+        size: 0.5
+    }
+);
+*/
+
+        async function paintTest(
+    text,
+    options = {}
+) {
+
+    const {
+        align = "center",
+        color = "#FFFFFF",
+        size = 180,
+        width = "center",
+        height = "center"
+    } = options;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = shader.state.canvas.width
+    canvas.height = shader.state.canvas.height
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.fillStyle = "#000";
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.fillStyle = color;
+    ctx.font = `bold ${size}px Arial`;
+    ctx.textAlign = align;
+    ctx.textBaseline = "middle";
+
+    const lines = String(text).split("\n");
+
+    const lineHeight = size * 1.2;
+    const totalHeight = lines.length * lineHeight;
+
+    let x;
+    let y;
+
+    switch (width) {
+
+        case "left":
+            x = size * 0.5;
+            ctx.textAlign = "left";
+            break;
+
+        case "right":
+            x = canvas.width - size * 0.5;
+            ctx.textAlign = "right";
+            break;
+
+        default:
+            x = canvas.width * 0.5;
+            ctx.textAlign = "center";
+            break;
+    }
+
+    switch (height) {
+
+        case "top":
+            y = size * 0.7;
+            break;
+
+        case "bottom":
+            y =
+                canvas.height -
+                totalHeight;
+            break;
+
+        default:
+            y =
+                canvas.height * 0.5 -
+                totalHeight * 0.5 +
+                lineHeight * 0.5;
+            break;
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+
+        ctx.fillText(
+            lines[i],
+            x,
+            y + i * lineHeight
+        );
+    }
+
+    await shader.uniform(
+        "iChannel7",
+        canvas
+    );
+
+    await shader.uniform(
+        "uFrameupdate",
+        shader.state.frameCount,
+        "int"
+    );
+}
+
+async function paintImage(
+    source,
+    options = {}
+) {
+
+    const {
+        width = "center",
+        height = "center",
+        size = 1
+    } = options;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width  = shader.state.canvas.width;
+    canvas.height = shader.state.canvas.height;
+
+    ctx.fillStyle = "#000";
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    let img;
+
+    if (typeof source === "string") {
+
+        img = new Image();
+        img.crossOrigin = "anonymous";
+
+        await new Promise((resolve, reject) => {
+
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = source;
+
+        });
+
+    } else {
+
+        img = source;
+
+    }
+
+    const w = img.width * size;
+    const h = img.height * size;
+
+    let x = 0;
+    let y = 0;
+
+    switch (width) {
+
+        case "left":
+            x = 0;
+            break;
+
+        case "right":
+            x = canvas.width - w;
+            break;
+
+        default:
+            x = (canvas.width - w) * 0.5;
+            break;
+
+    }
+
+    switch (height) {
+
+        case "top":
+            y = 0;
+            break;
+
+        case "bottom":
+            y = canvas.height - h;
+            break;
+
+        default:
+            y = (canvas.height - h) * 0.5;
+            break;
+
+    }
+
+    ctx.drawImage(
+        img,
+        x,
+        y,
+        w,
+        h
+    );
+
+    await shader.uniform(
+        "iChannel7",
+        canvas
+    );
+
+    await shader.uniform(
+        "uFrameupdate",
+        shader.state.frameCount,
+        "int"
+    );
+}
+
+        window.FF=shader;
+        window.YY=paintTest;
+        window.XX=paintImage;
+    </script>
+</body>
+
+</html>

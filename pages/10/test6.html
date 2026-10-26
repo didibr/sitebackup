@@ -1,0 +1,489 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <title>Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        @font-face {
+            font-family: 'Roboto';
+            src: url('./roboto-black.ttf') format('truetype');
+            font-weight: 900;
+            font-style: normal;
+            font-display: block;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: "Inter", sans-serif;
+            background-color: rgb(226, 21, 21);
+        }
+
+        .fontStyle {
+            font-size: 8vw;
+            /*font-family: 'Roboto', sans-serif;*/
+            text-align: center;
+            width: 512px;
+            height: 288px;
+            display: block;
+            border: 0px;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="button" onclick="ShaderPlayEditor.show();" value="Editor"
+        style="padding: 6px; margin: 5px; background-color: aqua;">
+
+    <div id="shaderText" class="fontStyle">
+    </div>
+
+
+
+
+    <script type="module">
+
+        const videoX = "https://didisoftwares.ddns.net/" + "10/videos/leopard.mp4";
+
+        import { ShaderPlay } from "https://didisoftwares.ddns.net/10/shaderplay.js";
+        const shader = ShaderPlay.create();
+        //window.SS = shader;
+
+        //shader.setResolution(512, 300);
+        shader.setResolution(512, 288);
+        shader.createVideoChannel(videoX, 0);
+
+
+
+
+        const main = `
+#version 300 es
+//iChannel0 = https://didisoftwares.ddns.net/10/images/cnn.png
+//Main
+
+#define S smoothstep
+#define N 500
+#define M mix
+#define X max
+#define BG vec3(.055,.055,.085)
+#define GD vec3(.13,.13,.19)
+#define GN vec3(.149,.651,.604)
+#define RD vec3(.937,.325,.314)
+#define GL vec3(1.,.85,.3)
+#define A(c) v=X(v,ac(U,c))
+
+uniform float uValues[500];
+uniform int uCount;
+
+float h(float n){return fract(sin(n*127.1)*43758.5453);}
+float h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+
+float sc(vec2 u,int id){
+vec2 p=vec2(id%16,15.-float(id/16));
+p=(u+p)/16.;
+u=step(abs(u-.5),vec2(.5));
+return texture(iChannel0,p).r*u.x*u.y;
+}
+
+float ac(inout vec2 U,int c){
+U.x-=.5;
+return sc(U,c);
+}
+
+float tp(vec2 U){
+float v=0.;
+A(66);A(84);A(67);A(47);A(85);A(83);A(68);A(84);
+return v;
+}
+
+float tc(vec2 U,int p){
+float v=0.;
+if(p>=100000){
+A(48+p/100000);
+A(48+p/10000%10);
+A(48+p/1000%10);
+A(44);
+A(48+p/100%10);
+A(48+p/10%10);
+A(48+p%10);
+}else{
+A(48+p/10000);
+A(48+p/1000%10);
+A(44);
+A(48+p/100%10);
+A(48+p/10%10);
+A(48+p%10);
+}
+return v;
+}
+
+float value(int i){
+if(i<0)return uValues[0];
+if(i>=uCount)return uValues[max(uCount-1,0)];
+return uValues[i];
+}
+
+void getRange(out float mn,out float mx){
+mn=1e20;
+mx=-1e20;
+for(int i=0;i<N;i++){
+if(i>=uCount)break;
+float v=uValues[i];
+mn=min(mn,v);
+mx=max(mx,v);
+}
+if(uCount<=0){
+mn=0.;
+mx=1.;
+}
+//float d=mx-mn;
+//if(d<1.)d=max(mx*.01,1.);
+//float pad=d*.08;
+float d = mx - mn;
+
+if(d < 100.0){
+    float center = (mx + mn)*0.5;
+    mn = center - 50.0;
+    mx = center + 50.0;
+}
+    float pad = d * 0.15;
+
+mn-=pad;
+mx+=pad;
+}
+
+
+
+float rb(vec2 p,vec2 b,float r){
+vec2 d=abs(p)-b+r;
+return length(X(d,0.))+min(X(d.x,d.y),0.)-r;
+}
+
+void mainImage(out vec4 O,vec2 fc){
+vec2 R=iResolution.xy;
+vec2 p=fc;
+float mn,mx;
+getRange(mn,mx);
+
+float dR=mx-mn;
+float W=R.x-100.;
+float H=R.y-32.;
+float sp=W/float(N);
+float sH=H/dR;
+
+float stepV;
+
+if(dR<20.)stepV=1.;
+else if(dR<50.)stepV=2.;
+else if(dR<100.)stepV=5.;
+else if(dR<200.)stepV=10.;
+else if(dR<500.)stepV=20.;
+else if(dR<1000.)stepV=50.;
+else if(dR<5000.)stepV=100.;
+else stepV=500.;
+
+vec3 c=BG;
+
+if(p.x<W&&p.y>32.){
+float lx=p.x;
+float ly=p.y-32.;
+
+float gP=mn+ly/H*dR;
+float gt=min(fract(gP/stepV),1.-fract(gP/stepV))*stepV/dR;
+
+c=M(c,GD,(1.-S(0.,1.5/H,gt))*.25);
+
+float vS=sp*10.;
+c=M(c,GD,(1.-S(0.,1.,abs(mod(lx+vS*.5,vS)-vS*.5)))*.2);
+
+int ci=int(floor(lx/sp));
+
+for(int d=-1;d<=1;d++){
+int I=ci+d;
+
+if(I<0||I>=N||I>=uCount)continue;
+
+float o=value(I);
+float cl=I+1<uCount?value(I+1):o;
+
+float hi=max(o,cl);
+float lo=min(o,cl);
+
+float range=max(dR,.0001);
+float wick=max((hi-lo)*.12,range*.002);
+
+hi+=wick;
+lo-=wick;
+
+bool bl=cl>=o;
+vec3 cc=bl?GN:RD;
+
+if(I>=uCount-1)cc=bl?M(GN,GL,.45):RD;
+
+float bT=(hi-mn)*sH;
+float bB=(lo-mn)*sH;
+
+float bodyT=(max(o,cl)-mn)*sH;
+float bodyB=(min(o,cl)-mn)*sH;
+
+if(bT-bB<1.5){
+float m=(bT+bB)*.5;
+bT=m+.75;
+bB=m-.75;
+}
+
+float cx=(float(I)+.5)*sp;
+float dx=abs(lx-cx);
+
+float bW=sp*.18;
+float wW=max(1.,sp*.06);
+
+c=M(c,cc,
+S(wW+.5,wW-.5,dx)*
+S(bB-.5,bB+.5,ly)*
+S(bT+.5,bT-.5,ly));
+
+c=M(c,cc,
+S(bW+.5,bW-.5,dx)*
+S(bodyB-.5,bodyB+.5,ly)*
+S(bodyT+.5,bodyT-.5,ly));
+
+if(I==uCount-1){
+float pulse=.65+.35*sin(iTime*5.);
+float dist=max(0.,dx-bW);
+float gy=ly>bT?ly-bT:ly<bB?bB-ly:0.;
+float gd2=length(vec2(dist,gy));
+
+c+=M(GN,GL,.5)*
+exp(-gd2*.025)*
+.35*pulse;
+}
+}
+
+if(uCount>0){
+int last=uCount-1;
+float lv=value(last);
+float cP=(lv-mn)*sH;
+
+if(
+    abs(ly-cP)<1.0 &&
+    mod(lx,12.0)<6.0
+){
+    c = mix(c, GN, 0.35);
+}
+
+c+=GN*.012;
+}
+}
+else if(p.x>=W){
+
+c=BG*.82;
+
+if(p.x-W<1.)c=GD*.6;
+
+if(p.y>32.){
+
+float cHA=18.;
+float fG=ceil(mn/stepV)*stepV;
+
+for(int i=0;i<64;i++){
+
+float gP=fG+float(i)*stepV;
+
+if(gP>=mx)break;
+
+float gPx=(gP-mn)/dR*H+32.;
+
+if(abs(p.y-gPx)<cHA*.6){
+vec2 U=(p-vec2(W+6.,gPx))/cHA+vec2(.75,.5);
+c=M(c,vec3(1.),tc(U,int(gP))*.9);
+}
+}
+
+if(uCount>0){
+
+float lv=value(uCount-1);
+float cPx=(lv-mn)/dR*H+32.;
+
+bool rising=uCount>1&&lv>=value(uCount-2);
+vec3 bC=rising?GN:RD;
+
+float bH=22.;
+
+if(p.y>cPx-bH*.5&&p.y<cPx+bH*.5&&p.x>W+1.){
+
+c=bC;
+
+vec2 U=(p-vec2(W+6.,cPx))/18.+vec2(.75,.5);
+c=M(c,vec3(1.),tc(U,int(lv)));
+}
+
+c+=bC*exp(-abs(p.y-cPx)*.08)*.15;
+}
+
+float mouseY=iMouse.y;
+
+if(mouseY>32.&&mouseY<R.y){
+
+float hoverPrice=
+mn+
+(mouseY-32.)/H*dR;
+
+if(
+p.y>mouseY-11.&&
+p.y<mouseY+11.&&
+p.x>W+1.
+){
+c=vec3(1.);
+
+vec2 U=
+(p-vec2(W+6.,mouseY))
+/18.+
+vec2(.75,.5);
+
+c=M(
+c,
+vec3(0.),
+tc(U,int(hoverPrice))
+);
+}
+}
+}
+}
+
+if(p.y<=32.)c=BG*.82;
+
+if(abs(p.y-32.)<.5&&p.x<W)c=GD*.6;
+
+float mouseY=iMouse.y;
+
+if(
+mouseY>32.&&
+mouseY<R.y&&
+p.x<W&&
+abs(p.y-mouseY)<1.5&&
+mod(p.x,12.)<6.
+){
+c = mix(c, vec3(1.0), 0.35);
+}
+
+{
+float by=R.y-100.;
+
+float bd=rb(
+p-vec2(88.,by+38.),
+vec2(64.,38.),
+4.
+);
+
+float fl=1.-S(-1.,0.,bd);
+
+c=M(c,BG*1.13,fl*.92);
+c=M(c,vec3(.5),(1.-S(0.,1.5,abs(bd)))*.4);
+
+if(fl>.001){
+
+vec2 U=(p-vec2(36.,by+54.))/24.+vec2(.75,.5);
+c=M(c,vec3(1.),tp(U)*fl);
+
+if(uCount>0){
+
+float lv=value(uCount-1);
+bool rising=uCount>1&&lv>=value(uCount-2);
+
+U=(p-vec2(36.,by+25.))/28.+vec2(.75,.5);
+
+c=M(
+c,
+rising?GN:RD,
+tc(U,int(lv))*fl
+);
+}
+}
+}
+
+c*=.97+.03*sin(fc.y*2.5);
+
+vec2 vg=fc/R*2.-1.;
+c*=1.-dot(vg,vg)*.15;
+
+O=vec4(c,1.);
+}
+`;
+
+
+
+        const vertex2 = `in vec2 position; void main() { gl_Position = vec4(position, 0.0, 1.0);}`;
+        let shaderLoaded = false;
+        const MAX_HISTORY = 500;
+        const values = new Float32Array(MAX_HISTORY);
+        let count = 0;
+        let bucket = -1;
+        let lastPrice = 0;
+        
+        async function loadHistory() {
+            const res = await fetch(
+                "https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1s&limit=500"
+            );
+            const data = await res.json();
+            count = 0;
+            for (const k of data) {
+                const close = Math.round(Number(k[4])); // close
+                values[count++] = close;
+            }
+            shader.uniform("uValues", values, "float[]");
+            shader.uniform("uCount", count, "int");
+        }
+        function addValue(v) {
+            if (!shaderLoaded) return;
+            if (count < MAX_HISTORY) {
+                values[count++] = v;
+            } else {
+                values.copyWithin(0, 1);
+                values[MAX_HISTORY - 1] = v;
+            }
+            //console.log(count);
+            //console.log(values);            
+            shader.uniform("uValues", values, "float[]");
+            shader.uniform("uCount", count, "int");
+        }
+        const ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade");
+        ws.onmessage = e => {
+            const d = JSON.parse(e.data);
+            if (d.e === "trade") {
+                //const price = Number(d.p);
+                const price = Math.floor(Number(d.p));
+                const sec = Math.floor(d.T / 1000);
+                if (bucket < 0) bucket = sec;
+                if (sec !== bucket) {
+                    addValue(lastPrice);
+                    bucket = sec;
+                }
+                lastPrice = price;
+            }
+            if (d.ping !== undefined) {
+                ws.send(JSON.stringify({ pong: d.ping }));
+                return;
+            }
+        };
+
+
+        (async () => { //using assync function                    
+            var response = await shader.Shader('shaderText', vertex2, main,
+                { frameSkip: 0, alpha: true }
+            );
+            console.log('compiled');
+            await loadHistory();
+            shaderLoaded = true;
+            //window.VX = shader;
+            //shader.uniform('uStartTime', shader.state.lastTime);
+            //shader.uniform('uReset', 0.0);
+        })();
+
+
+    </script>
+</body>
+
+</html>
